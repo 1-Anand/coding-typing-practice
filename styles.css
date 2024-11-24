@@ -1,17 +1,57 @@
 /* styles.css */
+
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Consolas', 'Courier New', monospace;
+    background-color: #1e1e1e; /* VSCode default background */
+    color: #d4d4d4; /* VSCode default text color */
     margin: 20px;
+    font-size: 14px;
   }
+  
+  h1, h2, h3, p {
+    color: #d4d4d4;
+  }
+  
+  nav a {
+    color: #569cd6;
+    margin-right: 15px;
+    text-decoration: none;
+  }
+  
+  nav a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Displayed text from the uploaded file */
   #displayText {
     white-space: pre-wrap;
-    background-color: #f0f0f0;
+    background-color: #252526; /* VSCode editor background */
     padding: 10px;
     margin-top: 10px;
+    max-height: 300px; /* Set max height */
+    overflow-y: scroll; /* Enable vertical scrolling */
+    border: 1px solid #3c3c3c; /* Border similar to VSCode */
+    font-family: 'Consolas', 'Courier New', monospace;
   }
+  
+  /* Textarea for typing */
   #typingArea {
     width: 100%;
     height: 200px;
     margin-top: 10px;
+    background-color: #1e1e1e; /* VSCode editor background */
+    color: #d4d4d4; /* VSCode default text color */
+    border: 1px solid #3c3c3c;
+    padding: 10px;
+    resize: none; /* Disable resizing */
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+  }
+  
+  /* Accuracy display */
+  #accuracy {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #d4d4d4;
   }
   
