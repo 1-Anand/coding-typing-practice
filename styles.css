@@ -7,8 +7,8 @@ html, body {
   
   body {
     font-family: 'Consolas', 'Courier New', monospace;
-    background-color: #1e1e1e;
-    color: #d4d4d4;
+    background-color: #1e1e1e; /* VSCode default background */
+    color: #d4d4d4; /* VSCode default text color */
     font-size: 14px;
     display: flex;
     flex-direction: column;
@@ -44,12 +44,13 @@ html, body {
   #displayText {
     flex: 1;
     white-space: pre-wrap;
-    background-color: #252526;
+    background-color: #252526; /* VSCode editor background */
     padding: 10px;
     overflow-y: auto; /* Makes display area scrollable */
-    border: 1px solid #3c3c3c;
+    border: 1px solid #3c3c3c; /* Border similar to VSCode */
     font-family: 'Consolas', 'Courier New', monospace;
     margin-bottom: 10px;
+    line-height: 1.6;
   }
   
   /* Container to hold the typing area at the bottom */
@@ -61,12 +62,30 @@ html, body {
   #typingArea {
     width: 100%;
     height: 150px; /* Adjust height if necessary */
-    background-color: #1e1e1e;
-    color: #d4d4d4;
+    background-color: #1e1e1e; /* VSCode editor background */
+    color: #d4d4d4; /* VSCode default text color */
     border: 1px solid #3c3c3c;
     padding: 10px;
     resize: none; /* Disable resizing */
     font-family: 'Consolas', 'Courier New', monospace;
     font-size: 14px;
+  }
+  
+  #accuracy {
+    font-size: 14px;
+    color: #d4d4d4;
+  }
+  
+  /* Highlight the current word being typed */
+  .highlight {
+    background-color: #007acc; /* Light blue to highlight the current word */
+    color: #ffffff;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  
+  /* Style for completed words */
+  .completed {
+    color: #6a9955; /* Light green to indicate completed words */
   }
   
