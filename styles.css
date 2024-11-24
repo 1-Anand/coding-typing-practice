@@ -38,6 +38,7 @@ html, body {
     display: flex;
     flex-direction: column;
     padding: 10px;
+    overflow: hidden; /* Prevent scrolling of the container itself */
   }
   
   #displayText {
@@ -45,32 +46,27 @@ html, body {
     white-space: pre-wrap;
     background-color: #252526;
     padding: 10px;
-    overflow-y: auto;
+    overflow-y: auto; /* Makes display area scrollable */
     border: 1px solid #3c3c3c;
     font-family: 'Consolas', 'Courier New', monospace;
     margin-bottom: 10px;
   }
   
+  /* Container to hold the typing area at the bottom */
+  .typing-container {
+    background-color: #1e1e1e;
+    padding: 10px 0;
+  }
+  
   #typingArea {
-    height: 150px;
+    width: 100%;
+    height: 150px; /* Adjust height if necessary */
     background-color: #1e1e1e;
     color: #d4d4d4;
     border: 1px solid #3c3c3c;
     padding: 10px;
-    resize: none;
+    resize: none; /* Disable resizing */
     font-family: 'Consolas', 'Courier New', monospace;
     font-size: 14px;
-  }
-  
-  #accuracy {
-    font-size: 14px;
-    color: #d4d4d4;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 600px) {
-    #typingArea {
-      height: 100px;
-    }
   }
   
