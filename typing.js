@@ -398,6 +398,7 @@ function renderFileTree() {
 function renderEditor() {
   const lines = targetText.split('\n');
   const location = getLineColumn(typedText.length);
+  const activeTokenRange = getActiveTokenRange(typedText.length);
   let charIndex = 0;
   elements.editorLines.innerHTML = '';
 
@@ -414,12 +415,12 @@ function renderEditor() {
     code.className = 'line-code';
 
     for (const expectedChar of line) {
-      code.appendChild(createCharacterSpan(expectedChar, charIndex));
+      code.appendChild(createCharacterSpan(expectedChar, charIndex, activeTokenRange));
       charIndex++;
     }
 
     if (lineIndex < lines.length - 1) {
-      const newlineSpan = createCharacterSpan('\n', charIndex);
+      const newlineSpan = createCharacterSpan('\n', charIndex, activeTokenRange);
       newlineSpan.textContent = newlineSpan.classList.contains('current') || newlineSpan.classList.contains('incorrect') ? ' [enter]' : '';
       newlineSpan.classList.add('enter-char');
       code.appendChild(newlineSpan);
@@ -434,13 +435,17 @@ function renderEditor() {
   keepCursorVisible();
 }
 
-function createCharacterSpan(expectedChar, index) {
+function createCharacterSpan(expectedChar, index, activeTokenRange) {
   const span = document.createElement('span');
   span.className = 'code-char';
   span.textContent = expectedChar;
 
   if (expectedChar === ' ') {
     span.classList.add('space-char');
+  }
+
+  if (index >= activeTokenRange.start && index < activeTokenRange.end) {
+    span.classList.add('active-token');
   }
 
   if (index < typedText.length) {
@@ -452,6 +457,32 @@ function createCharacterSpan(expectedChar, index) {
   }
 
   return span;
+}
+
+function getActiveTokenRange(position) {
+  if (!targetText.length) {
+    return { start: 0, end: 0 };
+  }
+
+  const safePosition = Math.min(position, targetText.length - 1);
+  const charAtCursor = targetText[safePosition];
+
+  if (/\s/.test(charAtCursor)) {
+    return { start: safePosition, end: safePosition + 1 };
+  }
+
+  let start = safePosition;
+  let end = safePosition + 1;
+
+  while (start > 0 && !/\s/.test(targetText[start - 1])) {
+    start--;
+  }
+
+  while (end < targetText.length && !/\s/.test(targetText[end])) {
+    end++;
+  }
+
+  return { start, end };
 }
 
 function handleKeydown(event) {

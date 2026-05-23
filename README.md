@@ -23,4 +23,7 @@ terraform validate
 terraform plan -out=tfplan
 ```
 
-The sample Azure DevOps pipeline is in `devops/azure-pipelines/terraform.yml`.
+Azure DevOps pipeline examples:
+
+- `infra-pipeline/azure-pipelines.yml` contains the simple init, plan, apply practice pipeline.
+- `devops/azure-pipelines/terraform.yml` contains the staged plan/apply pipeline example.
