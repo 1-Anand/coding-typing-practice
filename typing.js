@@ -1,135 +1,281 @@
 const lessons = [
   {
-    title: 'Azure Terraform Starter',
-    type: 'Guided lesson',
-    summary: 'Terraform commands, provider setup, and resource group basics.',
-    text: `terraform init
-terraform fmt
-terraform validate
-terraform plan -out=tfplan
+    title: 'Azure Terraform Lab',
+    type: 'Terraform lesson',
+    summary: 'Provider, resource group, network, subnet, storage account, and VM practice.',
+    pages: [
+      {
+        fileName: 'providers.tf',
+        text: `terraform {
+  required_version = ">= 1.6.0"
 
-resource "azurerm_resource_group" "practice" {
-  name     = "rg-typing-devops"
-  location = "eastus"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
+
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  subscription_id                 = var.subscription_id
+  resource_provider_registrations = "core"
+
+  features {}
 }`
+      },
+      {
+        fileName: 'resource-group.tf',
+        text: `locals {
+  name_prefix = "\${var.project_name}-\${var.environment}"
+
+  common_tags = {
+    environment = var.environment
+    managed_by  = "terraform"
+    project     = var.project_name
+  }
+}
+
+resource "azurerm_resource_group" "main" {
+  name     = "rg-\${local.name_prefix}"
+  location = var.location
+  tags     = local.common_tags
+}`
+      },
+      {
+        fileName: 'network.tf',
+        text: `resource "azurerm_virtual_network" "main" {
+  name                = "vnet-\${local.name_prefix}"
+  address_space       = ["10.40.0.0/16"]
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  tags                = local.common_tags
+}
+
+resource "azurerm_subnet" "vm" {
+  name                 = "snet-vm"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.40.1.0/24"]
+}`
+      },
+      {
+        fileName: 'security.tf',
+        text: `resource "azurerm_network_security_group" "vm" {
+  name                = "nsg-vm-\${local.name_prefix}"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  tags                = local.common_tags
+
+  security_rule {
+    name                       = "AllowSSH"
+    priority                   = 1000
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = var.ssh_source_address_prefix
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "vm" {
+  subnet_id                 = azurerm_subnet.vm.id
+  network_security_group_id = azurerm_network_security_group.vm.id
+}`
+      },
+      {
+        fileName: 'storage.tf',
+        text: `resource "random_string" "suffix" {
+  length  = 6
+  lower   = true
+  numeric = true
+  special = false
+  upper   = false
+}
+
+resource "azurerm_storage_account" "main" {
+  name                            = "st\${var.project_name}\${var.environment}\${random_string.suffix.result}"
+  resource_group_name             = azurerm_resource_group.main.name
+  location                        = azurerm_resource_group.main.location
+  account_tier                    = "Standard"
+  account_replication_type        = "LRS"
+  min_tls_version                 = "TLS1_2"
+  https_traffic_only_enabled      = true
+  allow_nested_items_to_be_public = false
+  tags                            = local.common_tags
+}`
+      },
+      {
+        fileName: 'vm.tf',
+        text: `resource "azurerm_public_ip" "vm" {
+  name                = "pip-vm-\${local.name_prefix}"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = local.common_tags
+}
+
+resource "azurerm_network_interface" "vm" {
+  name                = "nic-vm-\${local.name_prefix}"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+
+  ip_configuration {
+    name                          = "primary"
+    subnet_id                     = azurerm_subnet.vm.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.vm.id
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "vm" {
+  name                  = "vm-\${local.name_prefix}"
+  location              = azurerm_resource_group.main.location
+  resource_group_name   = azurerm_resource_group.main.name
+  size                  = var.vm_size
+  admin_username        = var.admin_username
+  network_interface_ids = [azurerm_network_interface.vm.id]
+
+  disable_password_authentication = true
+
+  admin_ssh_key {
+    username   = var.admin_username
+    public_key = var.admin_ssh_public_key
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+
+  tags = local.common_tags
+}`
+      }
+    ]
   },
   {
-    title: 'CI/CD Pipeline Flow',
-    type: 'DevOps lesson',
-    summary: 'Common pipeline stages used before infrastructure deployment.',
-    text: `checkout source
-install terraform
-run terraform fmt -check
-run terraform validate
-publish plan artifact
-wait for approval
-apply the approved plan`
+    title: 'Azure CLI Warmup',
+    type: 'Azure lesson',
+    summary: 'Short account, group, and deployment commands.',
+    pages: [
+      {
+        fileName: 'azure-cli.txt',
+        text: `az login
+az account show
+az account set --subscription "<subscription-id>"
+az group create --name rg-devops-lab --location eastus
+az deployment group what-if --resource-group rg-devops-lab`
+      }
+    ]
   },
   {
-    title: 'Kubernetes Deployment',
+    title: 'Kubernetes Manifest',
     type: 'Kubernetes lesson',
-    summary: 'Practice typing a compact deployment checklist.',
-    text: `apiVersion: apps/v1
+    summary: 'Deployment and service YAML practice.',
+    pages: [
+      {
+        fileName: 'deployment.yaml',
+        text: `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: typing-practice
 spec:
   replicas: 2
-  strategy:
-    type: RollingUpdate`
-  },
-  {
-    title: 'Azure CLI Warmup',
-    type: 'Azure lesson',
-    summary: 'Short commands for account and resource group practice.',
-    text: `az login
-az account show
-az group create --name rg-devops-lab --location eastus
-az deployment group what-if --resource-group rg-devops-lab`
+  selector:
+    matchLabels:
+      app: typing-practice
+  template:
+    metadata:
+      labels:
+        app: typing-practice
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.27`
+      }
+    ]
   }
-];
-
-const keyboardRows = [
-  [
-    ['`', '`'], ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'],
-    ['7', '7'], ['8', '8'], ['9', '9'], ['0', '0'], ['-', '-'], ['=', '='], ['backspace', 'Back']
-  ],
-  [
-    ['tab', 'Tab'], ['q', 'Q'], ['w', 'W'], ['e', 'E'], ['r', 'R'], ['t', 'T'], ['y', 'Y'],
-    ['u', 'U'], ['i', 'I'], ['o', 'O'], ['p', 'P'], ['[', '['], [']', ']'], ['\\', '\\']
-  ],
-  [
-    ['capslock', 'Caps'], ['a', 'A'], ['s', 'S'], ['d', 'D'], ['f', 'F'], ['g', 'G'], ['h', 'H'],
-    ['j', 'J'], ['k', 'K'], ['l', 'L'], [';', ';'], ["'", "'"], ['enter', 'Enter']
-  ],
-  [
-    ['shift', 'Shift'], ['z', 'Z'], ['x', 'X'], ['c', 'C'], ['v', 'V'], ['b', 'B'], ['n', 'N'],
-    ['m', 'M'], [',', ','], ['.', '.'], ['/', '/'], ['shift-right', 'Shift']
-  ],
-  [
-    ['space', 'Space']
-  ]
 ];
 
 const elements = {
   lessonSelect: document.getElementById('lessonSelect'),
   fileInput: document.getElementById('fileInput'),
   resetButton: document.getElementById('resetButton'),
-  displayText: document.getElementById('displayText'),
-  typingArea: document.getElementById('typingArea'),
-  accuracy: document.getElementById('accuracy'),
-  wpm: document.getElementById('wpm'),
-  timer: document.getElementById('timer'),
-  progressText: document.getElementById('progressText'),
+  nextPageButton: document.getElementById('nextPageButton'),
+  fileTree: document.getElementById('fileTree'),
+  activeTab: document.getElementById('activeTab'),
   progressBar: document.getElementById('progressBar'),
-  bestWpm: document.getElementById('bestWpm'),
-  statusMessage: document.getElementById('statusMessage'),
-  mistakes: document.getElementById('mistakes'),
-  nextKey: document.getElementById('nextKey'),
-  lessonTitle: document.getElementById('lessonTitle'),
   lessonType: document.getElementById('lessonType'),
-  lessonSummary: document.getElementById('lessonSummary'),
-  keyboard: document.getElementById('keyboard')
+  lessonTitle: document.getElementById('lessonTitle'),
+  pageCounter: document.getElementById('pageCounter'),
+  statusMessage: document.getElementById('statusMessage'),
+  editorSurface: document.getElementById('editorSurface'),
+  editorLines: document.getElementById('editorLines'),
+  typingCapture: document.getElementById('typingCapture'),
+  lineColumn: document.getElementById('lineColumn'),
+  wpm: document.getElementById('wpm'),
+  accuracy: document.getElementById('accuracy'),
+  progressText: document.getElementById('progressText'),
+  bestWpm: document.getElementById('bestWpm'),
+  mistakes: document.getElementById('mistakes'),
+  timer: document.getElementById('timer'),
+  nextKey: document.getElementById('nextKey')
 };
 
 let activeLessonIndex = 0;
+let activePageIndex = 0;
 let targetText = '';
+let typedText = '';
 let startedAt = null;
 let timerId = null;
-let completed = false;
+let completionTimer = null;
+let pageCompleted = false;
+const completedPages = new Map();
 
 function init() {
   renderLessonOptions();
-  renderKeyboard();
-  loadLesson(0);
   bindEvents();
-  elements.typingArea.focus();
+  loadLesson(0, 0);
 }
 
 function bindEvents() {
   elements.lessonSelect.addEventListener('change', (event) => {
-    loadLesson(Number(event.target.value));
+    loadLesson(Number(event.target.value), 0);
   });
 
   elements.fileInput.addEventListener('change', handleFileUpload);
-  elements.resetButton.addEventListener('click', resetLesson);
-  
-  elements.typingArea.addEventListener('input', handleTyping);
-  elements.typingArea.addEventListener('paste', (e) => e.preventDefault());
-  elements.typingArea.addEventListener('copy', (e) => e.preventDefault());
-  elements.typingArea.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const start = elements.typingArea.selectionStart;
-      const end = elements.typingArea.selectionEnd;
-      elements.typingArea.value = elements.typingArea.value.substring(0, start) + "  " + elements.typingArea.value.substring(end);
-      elements.typingArea.selectionStart = elements.typingArea.selectionEnd = start + 2;
-      handleTyping();
-    }
-  });
+  elements.resetButton.addEventListener('click', resetPage);
+  elements.nextPageButton.addEventListener('click', () => goToNextPage(true));
+  elements.editorSurface.addEventListener('click', focusEditor);
+  elements.editorSurface.addEventListener('focus', focusEditor);
+  elements.typingCapture.addEventListener('keydown', handleKeydown);
+  elements.typingCapture.addEventListener('input', handleCaptureInput);
+  elements.typingCapture.addEventListener('paste', (event) => event.preventDefault());
+  elements.typingCapture.addEventListener('copy', (event) => event.preventDefault());
 
-  elements.displayText.addEventListener('click', () => elements.typingArea.focus());
-  elements.displayText.addEventListener('keydown', () => elements.typingArea.focus());
+  document.addEventListener('keydown', (event) => {
+    if (event.target === elements.typingCapture || shouldIgnoreGlobalKey(event)) {
+      return;
+    }
+
+    focusEditor();
+    handleKeydown(event);
+  });
 }
 
 function renderLessonOptions() {
@@ -141,38 +287,39 @@ function renderLessonOptions() {
   });
 }
 
-function renderKeyboard() {
-  elements.keyboard.innerHTML = '';
-
-  keyboardRows.forEach((row) => {
-    const rowElement = document.createElement('div');
-    rowElement.className = 'keyboard-row';
-
-    row.forEach(([key, label]) => {
-      const keyElement = document.createElement('span');
-      keyElement.className = `key key-${key}`;
-      keyElement.dataset.key = key;
-      keyElement.textContent = label;
-      rowElement.appendChild(keyElement);
-    });
-
-    elements.keyboard.appendChild(rowElement);
-  });
+function loadLesson(lessonIndex, pageIndex) {
+  clearCompletionTimer();
+  activeLessonIndex = lessonIndex;
+  activePageIndex = pageIndex;
+  elements.lessonSelect.value = String(lessonIndex);
+  elements.lessonType.textContent = lessons[lessonIndex].type;
+  elements.lessonTitle.textContent = lessons[lessonIndex].title;
+  renderFileTree();
+  loadPage(pageIndex);
 }
 
-function loadLesson(index) {
-  activeLessonIndex = index;
-  const lesson = lessons[index];
-  targetText = lesson.text;
-  elements.lessonSelect.value = String(index);
-  elements.lessonTitle.textContent = lesson.title;
-  elements.lessonType.textContent = lesson.type;
-  elements.lessonSummary.textContent = lesson.summary;
-  
-  const savedWpm = localStorage.getItem(`bestWpm_${index}`);
-  elements.bestWpm.textContent = savedWpm ? savedWpm : '-';
-  
-  resetTypingState();
+function loadPage(pageIndex) {
+  clearCompletionTimer();
+  const lesson = getActiveLesson();
+  const page = lesson.pages[pageIndex];
+
+  activePageIndex = pageIndex;
+  targetText = page.text;
+  typedText = '';
+  pageCompleted = false;
+  startedAt = null;
+  elements.activeTab.textContent = page.fileName;
+  elements.pageCounter.textContent = `File ${pageIndex + 1} of ${lesson.pages.length}`;
+  elements.editorSurface.classList.remove('page-complete');
+  elements.editorSurface.scrollTop = 0;
+  elements.typingCapture.value = '';
+
+  stopTimer();
+  renderFileTree();
+  renderEditor();
+  updateStats();
+  setStatus('Click the editor and type directly on the code.');
+  focusEditor();
 }
 
 function handleFileUpload() {
@@ -197,143 +344,235 @@ function handleFileUpload() {
       return;
     }
 
-    const existingCustomIndex = lessons.findIndex((lesson) => lesson.title === 'Custom Upload');
     const customLesson = {
       title: 'Custom Upload',
-      type: 'Custom lesson',
+      type: 'Custom text',
       summary: file.name,
-      text: customText
+      pages: [
+        {
+          fileName: file.name,
+          text: customText
+        }
+      ]
     };
 
+    const existingCustomIndex = lessons.findIndex((lesson) => lesson.title === 'Custom Upload');
     if (existingCustomIndex >= 0) {
       lessons[existingCustomIndex] = customLesson;
       elements.lessonSelect.options[existingCustomIndex].textContent = customLesson.title;
-      loadLesson(existingCustomIndex);
+      loadLesson(existingCustomIndex, 0);
     } else {
       lessons.push(customLesson);
       const option = document.createElement('option');
       option.value = lessons.length - 1;
       option.textContent = customLesson.title;
       elements.lessonSelect.appendChild(option);
-      loadLesson(lessons.length - 1);
+      loadLesson(lessons.length - 1, 0);
     }
   };
   reader.readAsText(file);
 }
 
-function resetLesson() {
-  loadLesson(activeLessonIndex);
-  elements.typingArea.focus();
+function resetPage() {
+  loadPage(activePageIndex);
 }
 
-function resetTypingState() {
-  stopTimer();
-  startedAt = null;
-  completed = false;
-  elements.typingArea.value = '';
-  elements.typingArea.disabled = false;
-  elements.typingArea.placeholder = 'Start typing here...';
-  setStatus('Focus the box and begin when you are ready.');
-  renderText();
-  updateStats();
-  highlightKeyboard();
+function renderFileTree() {
+  const lesson = getActiveLesson();
+  const completedSet = getCompletedSet(activeLessonIndex);
+  elements.fileTree.innerHTML = '';
+
+  lesson.pages.forEach((page, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'file-item';
+    button.classList.toggle('active', index === activePageIndex);
+    button.classList.toggle('done', completedSet.has(index));
+    button.innerHTML = `<span>${completedSet.has(index) ? 'ok' : 'tf'}</span><strong></strong>`;
+    button.querySelector('strong').textContent = page.fileName;
+    button.addEventListener('click', () => loadPage(index));
+    elements.fileTree.appendChild(button);
+  });
 }
 
-function handleTyping() {
-  if (completed) {
+function renderEditor() {
+  const lines = targetText.split('\n');
+  const location = getLineColumn(typedText.length);
+  let charIndex = 0;
+  elements.editorLines.innerHTML = '';
+
+  lines.forEach((line, lineIndex) => {
+    const row = document.createElement('div');
+    row.className = 'editor-line';
+    row.classList.toggle('active-line', lineIndex + 1 === location.line);
+
+    const gutter = document.createElement('span');
+    gutter.className = 'line-number';
+    gutter.textContent = String(lineIndex + 1);
+
+    const code = document.createElement('span');
+    code.className = 'line-code';
+
+    for (const expectedChar of line) {
+      code.appendChild(createCharacterSpan(expectedChar, charIndex));
+      charIndex++;
+    }
+
+    if (lineIndex < lines.length - 1) {
+      const newlineSpan = createCharacterSpan('\n', charIndex);
+      newlineSpan.textContent = newlineSpan.classList.contains('current') || newlineSpan.classList.contains('incorrect') ? ' [enter]' : '';
+      newlineSpan.classList.add('enter-char');
+      code.appendChild(newlineSpan);
+      charIndex++;
+    }
+
+    row.appendChild(gutter);
+    row.appendChild(code);
+    elements.editorLines.appendChild(row);
+  });
+
+  keepCursorVisible();
+}
+
+function createCharacterSpan(expectedChar, index) {
+  const span = document.createElement('span');
+  span.className = 'code-char';
+  span.textContent = expectedChar;
+
+  if (expectedChar === ' ') {
+    span.classList.add('space-char');
+  }
+
+  if (index < typedText.length) {
+    span.classList.add(typedText[index] === expectedChar ? 'correct' : 'incorrect');
+  } else if (index === typedText.length) {
+    span.classList.add('current');
+  } else {
+    span.classList.add('pending');
+  }
+
+  return span;
+}
+
+function handleKeydown(event) {
+  if (event.ctrlKey || event.metaKey || event.altKey) {
     return;
   }
 
-  if (!startedAt) {
-    startedAt = Date.now();
-    timerId = window.setInterval(updateStats, 1000);
+  if (event.key === 'Backspace') {
+    event.preventDefault();
+    typedText = typedText.slice(0, -1);
+    pageCompleted = false;
+    elements.editorSurface.classList.remove('page-complete');
+    afterTypingChange();
+    return;
   }
 
-  if (elements.typingArea.value.length > targetText.length) {
-    elements.typingArea.value = elements.typingArea.value.slice(0, targetText.length);
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    addTypedText('\n');
+    return;
   }
 
-  renderText();
+  if (event.key === 'Tab') {
+    event.preventDefault();
+    addTypedText(getIndentText());
+    return;
+  }
+
+  if (event.key.length === 1) {
+    event.preventDefault();
+    addTypedText(event.key);
+  }
+}
+
+function handleCaptureInput() {
+  const value = elements.typingCapture.value;
+  elements.typingCapture.value = '';
+
+  if (value) {
+    addTypedText(value.replace(/\r\n/g, '\n'));
+  }
+}
+
+function addTypedText(value) {
+  if (pageCompleted || !value) {
+    return;
+  }
+
+  startTimer();
+  typedText = (typedText + value).slice(0, targetText.length);
+  afterTypingChange();
+}
+
+function afterTypingChange() {
+  renderEditor();
   updateStats();
-  highlightKeyboard();
 
-  if (elements.typingArea.value.length === targetText.length) {
-    completeLesson();
+  const mistakes = getMistakeCount();
+  if (typedText.length === targetText.length && mistakes === 0) {
+    completePage();
+  } else if (typedText.length === targetText.length && mistakes > 0) {
+    setStatus('End reached. Use Backspace and fix the red code before continuing.');
+  } else if (typedText.length > 0) {
+    setStatus(mistakes ? 'Fix red characters as you go.' : 'Typing in editor mode.');
+  } else {
+    setStatus('Click the editor and type directly on the code.');
   }
 }
 
-function renderText() {
-  const typedText = elements.typingArea.value;
-  const fragment = document.createDocumentFragment();
+function completePage() {
+  pageCompleted = true;
+  stopTimer();
+  elements.editorSurface.classList.add('page-complete');
+  getCompletedSet(activeLessonIndex).add(activePageIndex);
+  saveBestWpm();
+  renderFileTree();
 
-  for (let index = 0; index < targetText.length; index++) {
-    const expectedChar = targetText[index];
-    const typedChar = typedText[index];
-    const span = document.createElement('span');
-    span.className = 'char';
-    span.textContent = expectedChar;
-
-    if (index < typedText.length) {
-      span.classList.add(typedChar === expectedChar ? 'correct' : 'incorrect');
-    } else if (index === typedText.length) {
-      span.classList.add('current');
-    } else {
-      span.classList.add('pending');
-    }
-
-    if (expectedChar === ' ') {
-      span.classList.add('space-char');
-    }
-
-    fragment.appendChild(span);
-  }
-
-  elements.displayText.innerHTML = '';
-  elements.displayText.appendChild(fragment);
-
-  const currentChar = elements.displayText.querySelector('.char.current');
-  if (currentChar) {
-    keepCurrentCharacterVisible(currentChar);
+  if (activePageIndex < getActiveLesson().pages.length - 1) {
+    setStatus('File complete. Next file is loading...');
+    completionTimer = window.setTimeout(() => goToNextPage(false), 800);
+  } else {
+    setStatus('Lesson complete. Reset or choose another lesson.');
   }
 }
 
-function keepCurrentCharacterVisible(currentChar) {
-  const container = elements.displayText;
-  const padding = 32;
-  const charTop = currentChar.offsetTop;
-  const charBottom = charTop + currentChar.offsetHeight;
-  const viewTop = container.scrollTop;
-  const viewBottom = viewTop + container.clientHeight;
+function goToNextPage(wrapAtEnd) {
+  const lesson = getActiveLesson();
+  const nextIndex = activePageIndex + 1;
 
-  if (charTop < viewTop + padding || charBottom > viewBottom - padding) {
-    container.scrollTop = Math.max(charTop - container.clientHeight / 2, 0);
+  if (nextIndex < lesson.pages.length) {
+    loadPage(nextIndex);
+    return;
+  }
+
+  if (wrapAtEnd) {
+    loadPage(0);
   }
 }
 
 function updateStats() {
-  const typedText = elements.typingArea.value;
   const elapsedSeconds = startedAt ? Math.floor((Date.now() - startedAt) / 1000) : 0;
-  const correctCharacters = getCorrectCharacterCount(typedText);
-  const mistakes = getMistakeCount(typedText);
+  const correctCharacters = getCorrectCharacterCount();
+  const mistakes = getMistakeCount();
   const accuracy = typedText.length ? Math.round((correctCharacters / typedText.length) * 100) : 100;
   const minutes = Math.max(elapsedSeconds / 60, 1 / 60);
   const wpm = startedAt ? Math.round((correctCharacters / 5) / minutes) : 0;
-  const progress = targetText.length ? Math.round((typedText.length / targetText.length) * 100) : 0;
+  const progress = getLessonProgress();
+  const location = getLineColumn(typedText.length);
 
-  elements.accuracy.textContent = `${accuracy}%`;
   elements.wpm.textContent = String(wpm);
-  elements.timer.textContent = formatTime(elapsedSeconds);
+  elements.accuracy.textContent = `${accuracy}%`;
   elements.progressText.textContent = `${progress}%`;
   elements.progressBar.style.width = `${progress}%`;
-  elements.mistakes.textContent = `Mistakes: ${mistakes}`;
+  elements.bestWpm.textContent = getBestWpm() || '-';
+  elements.mistakes.textContent = `Mistakes ${mistakes}`;
+  elements.timer.textContent = formatTime(elapsedSeconds);
   elements.nextKey.textContent = getNextKeyLabel();
-
-  if (!completed && typedText.length > 0) {
-    setStatus(mistakes ? 'Keep going. Fix red characters as you type.' : 'Nice rhythm. Stay accurate.');
-  }
+  elements.lineColumn.textContent = `Ln ${location.line}, Col ${location.column}`;
 }
 
-function getCorrectCharacterCount(typedText) {
+function getCorrectCharacterCount() {
   let count = 0;
 
   for (let index = 0; index < typedText.length; index++) {
@@ -345,7 +584,7 @@ function getCorrectCharacterCount(typedText) {
   return count;
 }
 
-function getMistakeCount(typedText) {
+function getMistakeCount() {
   let count = 0;
 
   for (let index = 0; index < typedText.length; index++) {
@@ -357,45 +596,45 @@ function getMistakeCount(typedText) {
   return count;
 }
 
-function completeLesson() {
-  completed = true;
-  stopTimer();
-  elements.typingArea.disabled = true;
-  elements.typingArea.placeholder = 'Lesson complete';
-  setStatus('Lesson complete. Reset or choose another lesson.');
-  highlightKeyboard();
+function getLessonProgress() {
+  const lesson = getActiveLesson();
+  const totalCharacters = lesson.pages.reduce((sum, page) => sum + page.text.length, 0);
+  const completedCharacters = lesson.pages
+    .slice(0, activePageIndex)
+    .reduce((sum, page) => sum + page.text.length, 0);
 
-  const currentWpm = Number(elements.wpm.textContent);
-  const savedWpm = Number(localStorage.getItem(`bestWpm_${activeLessonIndex}`)) || 0;
-  
-  if (currentWpm > savedWpm) {
-    localStorage.setItem(`bestWpm_${activeLessonIndex}`, currentWpm);
-    elements.bestWpm.textContent = String(currentWpm);
+  return totalCharacters ? Math.round(((completedCharacters + typedText.length) / totalCharacters) * 100) : 0;
+}
+
+function getLineColumn(position) {
+  const beforeCursor = targetText.slice(0, position);
+  const lines = beforeCursor.split('\n');
+  return {
+    line: lines.length,
+    column: lines[lines.length - 1].length + 1
+  };
+}
+
+function keepCursorVisible() {
+  const currentChar = elements.editorLines.querySelector('.code-char.current');
+
+  if (!currentChar) {
+    return;
   }
-}
 
-function stopTimer() {
-  if (timerId) {
-    window.clearInterval(timerId);
-    timerId = null;
+  const container = elements.editorSurface;
+  const row = currentChar.closest('.editor-line');
+  const padding = 64;
+  const rowTop = row.offsetTop - container.offsetTop;
+  const rowBottom = rowTop + row.offsetHeight;
+
+  if (rowTop < container.scrollTop + padding || rowBottom > container.scrollTop + container.clientHeight - padding) {
+    container.scrollTop = Math.max(rowTop - container.clientHeight / 2, 0);
   }
-}
-
-function formatTime(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = String(seconds % 60).padStart(2, '0');
-  return `${minutes}:${remainingSeconds}`;
-}
-
-function highlightKeyboard() {
-  const activeKey = getKeyName(targetText[elements.typingArea.value.length]);
-  elements.keyboard.querySelectorAll('.key').forEach((key) => {
-    key.classList.toggle('active', Boolean(activeKey) && key.dataset.key === activeKey);
-  });
 }
 
 function getNextKeyLabel() {
-  const nextChar = targetText[elements.typingArea.value.length];
+  const nextChar = targetText[typedText.length];
 
   if (!nextChar) {
     return 'Done';
@@ -412,20 +651,93 @@ function getNextKeyLabel() {
   return nextChar;
 }
 
-function getKeyName(character = '') {
-  if (character === ' ') {
-    return 'space';
+function getIndentText() {
+  const remaining = targetText.slice(typedText.length);
+
+  if (remaining.startsWith('  ')) {
+    return '  ';
   }
 
-  if (character === '\n') {
-    return 'enter';
+  if (remaining.startsWith('    ')) {
+    return '    ';
   }
 
-  if (character === '\t') {
-    return 'tab';
+  return '\t';
+}
+
+function startTimer() {
+  if (!startedAt) {
+    startedAt = Date.now();
+    timerId = window.setInterval(updateStats, 1000);
+  }
+}
+
+function stopTimer() {
+  if (timerId) {
+    window.clearInterval(timerId);
+    timerId = null;
+  }
+}
+
+function saveBestWpm() {
+  const currentWpm = Number(elements.wpm.textContent);
+  const bestWpm = Number(getBestWpm()) || 0;
+
+  if (currentWpm > bestWpm) {
+    localStorage.setItem(getBestWpmKey(), String(currentWpm));
+  }
+}
+
+function getBestWpm() {
+  return localStorage.getItem(getBestWpmKey());
+}
+
+function getBestWpmKey() {
+  return `bestWpm_${getActiveLesson().title}_${getActivePage().fileName}`;
+}
+
+function getCompletedSet(lessonIndex) {
+  if (!completedPages.has(lessonIndex)) {
+    completedPages.set(lessonIndex, new Set());
   }
 
-  return character.toLowerCase();
+  return completedPages.get(lessonIndex);
+}
+
+function getActiveLesson() {
+  return lessons[activeLessonIndex];
+}
+
+function getActivePage() {
+  return getActiveLesson().pages[activePageIndex];
+}
+
+function focusEditor() {
+  elements.typingCapture.focus({ preventScroll: true });
+  elements.editorSurface.classList.add('focused');
+}
+
+function shouldIgnoreGlobalKey(event) {
+  const tagName = event.target.tagName;
+
+  if (event.ctrlKey || event.metaKey || event.altKey) {
+    return true;
+  }
+
+  return ['BUTTON', 'SELECT', 'INPUT'].includes(tagName);
+}
+
+function clearCompletionTimer() {
+  if (completionTimer) {
+    window.clearTimeout(completionTimer);
+    completionTimer = null;
+  }
+}
+
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = String(seconds % 60).padStart(2, '0');
+  return `${minutes}:${remainingSeconds}`;
 }
 
 function setStatus(message) {

@@ -43,6 +43,41 @@ variable "location" {
   default     = "eastus"
 }
 
+variable "vnet_address_space" {
+  description = "Address space for the practice virtual network."
+  type        = list(string)
+  default     = ["10.40.0.0/16"]
+}
+
+variable "vm_subnet_prefixes" {
+  description = "Address prefixes for the VM subnet."
+  type        = list(string)
+  default     = ["10.40.1.0/24"]
+}
+
+variable "ssh_source_address_prefix" {
+  description = "Source address allowed to SSH to the VM. Prefer your public IP with /32."
+  type        = string
+}
+
+variable "admin_username" {
+  description = "Admin username for the Linux VM."
+  type        = string
+  default     = "azureuser"
+}
+
+variable "admin_ssh_public_key" {
+  description = "SSH public key used to access the Linux VM."
+  type        = string
+  sensitive   = true
+}
+
+variable "vm_size" {
+  description = "Azure VM size for the practice machine."
+  type        = string
+  default     = "Standard_B1s"
+}
+
 variable "tags" {
   description = "Extra tags to apply to all resources."
   type        = map(string)

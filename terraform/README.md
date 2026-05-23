@@ -3,6 +3,11 @@
 This folder contains a small Azure practice stack for a static website:
 
 - Resource group
+- Virtual network
+- VM subnet
+- Network security group
+- Public IP and network interface
+- Linux virtual machine
 - Storage account
 - Azure Storage static website hosting
 - Basic tags, TLS, retention, and versioning settings
@@ -13,6 +18,7 @@ This folder contains a small Azure practice stack for a static website:
 az login
 az account set --subscription "<subscription-id>"
 copy terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars and set your SSH public key plus your public IP /32.
 terraform init
 terraform fmt
 terraform validate

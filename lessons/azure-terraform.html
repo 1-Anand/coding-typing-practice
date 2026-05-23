@@ -22,14 +22,24 @@
   <main class="simple-page">
     <p class="eyebrow">Infrastructure as code</p>
     <h1>Azure Terraform</h1>
-    <p>This lesson introduces a small Terraform workflow for creating Azure resources from version-controlled code.</p>
+    <p>This lesson introduces a Terraform workflow for creating Azure resources from version-controlled code.</p>
+
+    <h2>Terraform files to practice</h2>
+    <ul>
+      <li><code>providers.tf</code>: configure Terraform, AzureRM provider, and provider versions.</li>
+      <li><code>resource-group.tf</code>: create the Azure resource group and shared tags.</li>
+      <li><code>network.tf</code>: create the VNet and subnet.</li>
+      <li><code>security.tf</code>: attach a network security group for SSH practice.</li>
+      <li><code>storage.tf</code>: create a storage account with secure defaults.</li>
+      <li><code>vm.tf</code>: create public IP, NIC, and Linux VM resources.</li>
+    </ul>
 
     <h2>Practice workflow</h2>
     <ul>
       <li>Run <code>terraform fmt</code> to keep files consistent.</li>
       <li>Run <code>terraform validate</code> before opening a pull request.</li>
-      <li>Use <code>terraform plan</code> to review changes before apply.</li>
-      <li>Use a service connection or federated credentials for CI/CD authentication.</li>
+      <li>Use <code>terraform plan</code> to review resource group, VNet, subnet, VM, and storage changes.</li>
+      <li>Use a service connection or federated credentials for Azure DevOps authentication.</li>
       <li>Keep state in a remote backend for team practice projects.</li>
     </ul>
 
