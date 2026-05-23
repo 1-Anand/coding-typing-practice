@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PV and PVC</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Storage</p>
+    <h1>PV and PVC</h1>
+    <p>This lesson explains Persistent Volumes (PV) and Persistent Volume Claims (PVC) in Kubernetes.</p>
+
+    <h2>Persistent Volume</h2>
+    <ul>
+      <li>A PV is cluster storage provisioned by an administrator or dynamically by a storage class.</li>
+      <li>It represents storage capacity, access mode, and reclaim behavior.</li>
+    </ul>
+
+    <h2>Persistent Volume Claim</h2>
+    <ul>
+      <li>A PVC is a request for storage by a pod.</li>
+      <li>It binds to a PV that matches storage size and access mode.</li>
+      <li>Pods use PVCs in their <code>volumes</code> section.</li>
+    </ul>
+
+    <p><a href="../lessons.html">Back to Lessons</a></p>
+  </main>
+</body>
+</html>

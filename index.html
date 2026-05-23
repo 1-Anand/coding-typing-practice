@@ -1,16 +1,33 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Coding Typing Practice</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Welcome to Coding Typing Practice</h1>
-  <nav>
-    <a href="typing.html">Typing Practice</a>
-    <a href="lessons.html">Lessons</a>
-  </nav>
+  <header class="app-header">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a class="active" href="index.html" aria-current="page">Home</a>
+      <a href="lessons.html">Lessons</a>
+      <a href="typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Cloud skills through repetition</p>
+    <h1>Build typing speed while memorizing DevOps syntax.</h1>
+    <p>Practice Terraform, Azure CLI, Kubernetes YAML, and pipeline commands in one focused typing workspace.</p>
+
+    <nav class="simple-nav" aria-label="Start options">
+      <a href="typing.html">Start Typing Practice</a>
+      <a href="lessons.html">Browse DevOps Lessons</a>
+    </nav>
+  </main>
 </body>
 </html>

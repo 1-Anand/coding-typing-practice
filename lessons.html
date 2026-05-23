@@ -1,19 +1,35 @@
-<!-- lessons.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lessons</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Lessons</h1>
-  <ul>
-    <li><a href="lessons/azure-pipeline.html">Azure Pipeline</a></li>
-    <li><a href="lessons/azure-vm.html">Azure Linux VM</a></li>
-    <li><a href="lessons/kubernetes-deployment.html">Kubernetes Deployment</a></li>
-    <li><a href="lessons/pv-pvc.html">PV and PVC</a></li>
-    <li><a href="lessons/agic-yaml.html">AGIC YAML</a></li>
-  </ul>
+  <header class="app-header">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="index.html">Home</a>
+      <a class="active" href="lessons.html" aria-current="page">Lessons</a>
+      <a href="typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Lesson library</p>
+    <h1>DevOps topics to read, type, and repeat.</h1>
+    <ul class="lesson-list">
+      <li><a href="lessons/azure-terraform.html">Azure Terraform</a></li>
+      <li><a href="lessons/azure-pipeline.html">Azure Pipeline</a></li>
+      <li><a href="lessons/azure-vm.html">Azure Linux VM</a></li>
+      <li><a href="lessons/kubernetes-deployment.html">Kubernetes Deployment</a></li>
+      <li><a href="lessons/pv-pvc.html">PV and PVC</a></li>
+      <li><a href="lessons/agic-yaml.html">AGIC YAML</a></li>
+    </ul>
+  </main>
 </body>
 </html>

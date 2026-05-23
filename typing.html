@@ -1,28 +1,115 @@
-<!-- typing.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Typing Practice</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <h1>Typing Practice</h1>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="lessons.html">Lessons</a>
-  </nav>
+<body class="typing-page">
+  <header class="app-header">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="index.html">Home</a>
+      <a href="lessons.html">Lessons</a>
+      <a class="active" href="typing.html" aria-current="page">Practice</a>
+    </nav>
+  </header>
 
-  <input type="file" id="fileInput" accept=".txt">
+  <main class="typing-shell">
+    <section class="lesson-toolbar" aria-label="Typing setup">
+      <div>
+        <p class="eyebrow">DevOps typing lab</p>
+        <h1>DevOps Typing</h1>
+      </div>
+      <div class="lesson-controls">
+        <label class="select-label" for="lessonSelect">Lesson</label>
+        <select id="lessonSelect"></select>
+        <label class="file-button" for="fileInput">Upload .txt</label>
+        <input type="file" id="fileInput" accept=".txt">
+        <button id="resetButton" type="button">Reset</button>
+      </div>
+    </section>
 
-  <div class="practice-container">
-    <div id="displayText"></div>
-    <div class="typing-container">
-      <textarea id="typingArea" placeholder="Start typing here..."></textarea>
+    <section class="stats-grid" aria-label="Typing statistics">
+      <div class="stat-tile">
+        <span>WPM</span>
+        <strong id="wpm">0</strong>
+      </div>
+      <div class="stat-tile">
+        <span>Accuracy</span>
+        <strong id="accuracy">100%</strong>
+      </div>
+      <div class="stat-tile">
+        <span>Time</span>
+        <strong id="timer">0:00</strong>
+      </div>
+      <div class="stat-tile">
+        <span>Progress</span>
+        <strong id="progressText">0%</strong>
+      </div>
+      <div class="stat-tile">
+        <span>Best WPM</span>
+        <strong id="bestWpm">-</strong>
+      </div>
+    </section>
+
+    <div class="practice-layout">
+      <section class="typing-workspace" aria-label="Typing exercise">
+        <div class="exercise-header">
+          <div>
+            <p class="eyebrow" id="lessonType">Guided lesson</p>
+            <h2 id="lessonTitle">Azure Terraform Starter</h2>
+          </div>
+          <div class="progress-meter" aria-hidden="true">
+            <span id="progressBar"></span>
+          </div>
+        </div>
+
+        <div id="displayText" class="prompt-text" role="textbox" aria-label="Text to type" tabindex="0"></div>
+
+        <label class="input-label" for="typingArea">Type the highlighted text below</label>
+        <textarea
+          id="typingArea"
+          class="typing-input"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder="Start typing here..."></textarea>
+
+        <div class="input-meta" aria-live="polite">
+          <span id="statusMessage">Focus the box and begin when you are ready.</span>
+          <span id="mistakes">Mistakes: 0</span>
+        </div>
+      </section>
+
+      <aside class="practice-panel" aria-label="Lesson details">
+        <div class="panel-section">
+          <p class="eyebrow">Next key</p>
+          <strong id="nextKey" class="next-key">T</strong>
+        </div>
+        <div class="panel-section">
+          <p class="eyebrow">Current lesson</p>
+          <p id="lessonSummary">Terraform commands, provider setup, and resource group basics.</p>
+        </div>
+        <div class="panel-section compact">
+          <span class="legend correct"></span>
+          <span>Correct</span>
+          <span class="legend incorrect"></span>
+          <span>Fix</span>
+          <span class="legend current"></span>
+          <span>Current</span>
+        </div>
+      </aside>
     </div>
-  </div>
 
-  <p id="accuracy">Accuracy: 100%</p>
+    <section class="keyboard-panel" aria-label="On-screen keyboard">
+      <div id="keyboard" class="keyboard"></div>
+    </section>
+  </main>
 
   <script src="typing.js"></script>
 </body>

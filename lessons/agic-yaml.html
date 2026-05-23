@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGIC YAML</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Ingress</p>
+    <h1>AGIC YAML</h1>
+    <p>This lesson introduces YAML configuration for Azure Application Gateway Ingress Controller (AGIC) in Kubernetes.</p>
+
+    <h2>AGIC basics</h2>
+    <ul>
+      <li>AGIC integrates Azure Application Gateway with AKS ingress routing.</li>
+      <li>You define ingress resources and annotations for Application Gateway behavior.</li>
+    </ul>
+
+    <h2>Common YAML elements</h2>
+    <ul>
+      <li><code>apiVersion: networking.k8s.io/v1</code></li>
+      <li><code>kind: Ingress</code></li>
+      <li><code>metadata.annotations</code> for settings such as <code>appgw.ingress.kubernetes.io/ssl-redirect</code>.</li>
+      <li><code>spec.rules</code> for host and path routing.</li>
+    </ul>
+
+    <p><a href="../lessons.html">Back to Lessons</a></p>
+  </main>
+</body>
+</html>

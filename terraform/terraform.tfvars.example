@@ -1,0 +1,8 @@
+project_name = "typinglab"
+environment  = "dev"
+location     = "eastus"
+
+tags = {
+  owner       = "your-name"
+  cost_center = "practice"
+}
