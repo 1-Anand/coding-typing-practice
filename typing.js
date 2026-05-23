@@ -2,7 +2,6 @@ const lessons = [
   {
     title: 'Azure Terraform Lab',
     type: 'Terraform lesson',
-    summary: 'Provider, resource group, network, subnet, storage account, and VM practice.',
     pages: [
       {
         fileName: 'providers.tf',
@@ -171,7 +170,6 @@ resource "azurerm_linux_virtual_machine" "vm" {
   {
     title: 'Azure CLI Warmup',
     type: 'Azure lesson',
-    summary: 'Short account, group, and deployment commands.',
     pages: [
       {
         fileName: 'azure-cli.txt',
@@ -186,7 +184,6 @@ az deployment group what-if --resource-group rg-devops-lab`
   {
     title: 'Kubernetes Manifest',
     type: 'Kubernetes lesson',
-    summary: 'Deployment and service YAML practice.',
     pages: [
       {
         fileName: 'deployment.yaml',
@@ -347,13 +344,7 @@ function handleFileUpload() {
     const customLesson = {
       title: 'Custom Upload',
       type: 'Custom text',
-      summary: file.name,
-      pages: [
-        {
-          fileName: file.name,
-          text: customText
-        }
-      ]
+      pages: [{ fileName: file.name, text: customText }]
     };
 
     const existingCustomIndex = lessons.findIndex((lesson) => lesson.title === 'Custom Upload');
@@ -685,12 +676,12 @@ function getNextKeyLabel() {
 function getIndentText() {
   const remaining = targetText.slice(typedText.length);
 
-  if (remaining.startsWith('  ')) {
-    return '  ';
-  }
-
   if (remaining.startsWith('    ')) {
     return '    ';
+  }
+
+  if (remaining.startsWith('  ')) {
+    return '  ';
   }
 
   return '\t';

@@ -1,6 +1,6 @@
 # Coding Typing Practice
 
-A static typing-practice app for DevOps and cloud syntax. The practice page now works like a compact VS Code-style editor: type directly on the code, complete one file, then move to the next file in the lesson.
+A static typing-practice app for DevOps and cloud syntax. The practice page includes guided lessons, uploadable `.txt` content, WPM, accuracy, timer, progress, character feedback, and an on-screen keyboard.
 
 ## Run locally
 
@@ -12,7 +12,7 @@ Open `http://localhost:8000/typing.html`.
 
 ## Azure Terraform practice
 
-Terraform examples live in `terraform/`. They create a practice stack with provider config, resource group, VNet, subnet, NSG, storage account, public IP, NIC, and Linux VM.
+Terraform examples live in `terraform/`. They create a small Azure Storage static website practice stack.
 
 ```powershell
 cd terraform
