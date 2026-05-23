@@ -1,0 +1,93 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+parameters:
+  - name: applyChanges
+    displayName: Apply approved Terraform plan
+    type: boolean
+    default: false
+
+variables:
+  azureServiceConnection: "replace-with-service-connection-name"
+  terraformWorkingDirectory: "$(System.DefaultWorkingDirectory)/terraform"
+
+stages:
+  - stage: validate_and_plan
+    displayName: Validate and plan
+    jobs:
+      - job: terraform_plan
+        displayName: Terraform plan
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+
+          - script: |
+              sudo apt-get update
+              sudo apt-get install -y gnupg software-properties-common
+              wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
+              echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              sudo apt-get update
+              sudo apt-get install -y terraform
+              terraform version
+            displayName: Install Terraform
+
+          - task: AzureCLI@2
+            displayName: Terraform fmt, validate, and plan
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                cd "$(terraformWorkingDirectory)"
+                terraform init
+                terraform fmt -check
+                terraform validate
+                terraform plan -out=tfplan
+
+          - publish: "$(terraformWorkingDirectory)/tfplan"
+            artifact: terraform-plan
+            displayName: Publish Terraform plan
+
+  - stage: apply
+    displayName: Apply
+    dependsOn: validate_and_plan
+    condition: and(succeeded(), eq('${{ parameters.applyChanges }}', true))
+    jobs:
+      - job: terraform_apply
+        displayName: Terraform apply
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+
+          - download: current
+            artifact: terraform-plan
+
+          - script: |
+              sudo apt-get update
+              sudo apt-get install -y gnupg software-properties-common
+              wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
+              echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              sudo apt-get update
+              sudo apt-get install -y terraform
+            displayName: Install Terraform
+
+          - task: AzureCLI@2
+            displayName: Terraform apply
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                cd "$(terraformWorkingDirectory)"
+                terraform init
+                cp "$(Pipeline.Workspace)/terraform-plan/tfplan" ./tfplan
+                terraform apply -auto-approve tfplan

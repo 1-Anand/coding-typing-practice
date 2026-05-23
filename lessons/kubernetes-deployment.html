@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kubernetes Deployment</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Containers</p>
+    <h1>Kubernetes Deployment</h1>
+    <p>This lesson covers deploying applications to Kubernetes using YAML manifests.</p>
+
+    <h2>Deployment basics</h2>
+    <ul>
+      <li>Define a <code>Deployment</code> with replicas, container image, and labels.</li>
+      <li>Use a <code>Service</code> to expose pods internally or externally.</li>
+      <li>Use <code>kubectl apply -f</code> to deploy and <code>kubectl rollout status</code> to monitor.</li>
+    </ul>
+
+    <h2>Best practices</h2>
+    <ul>
+      <li>Set resource requests and limits.</li>
+      <li>Define readiness and liveness probes.</li>
+      <li>Keep deployments declarative and version-controlled.</li>
+    </ul>
+
+    <p><a href="../lessons.html">Back to Lessons</a></p>
+  </main>
+</body>
+</html>

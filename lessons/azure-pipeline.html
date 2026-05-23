@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azure Pipeline</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">CI/CD</p>
+    <h1>Azure Pipeline</h1>
+    <p>This lesson covers CI/CD pipelines for Azure and GitHub, including Terraform infrastructure deployment and application delivery.</p>
+
+    <h2>Azure DevOps Pipelines</h2>
+    <ul>
+      <li><strong>Terraform pipeline for infra deployment:</strong> use Azure DevOps YAML pipeline stages such as <code>plan</code> and <code>apply</code>.</li>
+      <li><strong>State management:</strong> store Terraform state in Azure Storage or Terraform Cloud.</li>
+      <li><strong>Authentication:</strong> use an Azure service connection with managed identity, workload identity federation, or service principal.</li>
+      <li><strong>Application pipeline:</strong> build, test, publish artifacts, and deploy to App Service, AKS, or Web App for Containers.</li>
+    </ul>
+
+    <h2>GitHub Actions Pipelines</h2>
+    <ul>
+      <li>Create a workflow like <code>.github/workflows/terraform.yml</code>.</li>
+      <li>Use <code>actions/checkout</code>, <code>hashicorp/setup-terraform</code>, and <code>azure/login</code>.</li>
+      <li>Run <code>terraform init</code>, <code>terraform plan</code>, and <code>terraform apply</code>.</li>
+      <li>Use repository secrets or federated credentials for Azure authentication.</li>
+    </ul>
+
+    <p><a href="../lessons.html">Back to Lessons</a></p>
+  </main>
+</body>
+</html>
