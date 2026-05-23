@@ -771,12 +771,6 @@ function handleKeydown(event) {
     event.preventDefault();
     addTypedText(event.key);
   }
-
-  while (end < targetText.length && !/\s/.test(targetText[end])) {
-    end++;
-  }
-
-  return { start, end };
 }
 
 function handleCaptureInput() {
@@ -950,16 +944,10 @@ function getIndentText() {
   if (remaining.startsWith('    ')) {
     return '    ';
   }
-}
 
   if (remaining.startsWith('  ')) {
     return '  ';
   }
-}
-
-function saveBestWpm() {
-  const currentWpm = Number(elements.wpm.textContent);
-  const bestWpm = Number(getBestWpm()) || 0;
 
   return '\t';
 }
