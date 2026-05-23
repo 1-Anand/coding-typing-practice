@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="typing-page">
-  <header class="app-header ide-header">
+  <header class="app-header">
     <a class="brand" href="index.html">
       <span class="brand-mark">CT</span>
       <span>Coding Typing Practice</span>
@@ -19,72 +19,96 @@
     </nav>
   </header>
 
-  <main class="ide-shell">
-    <section class="ide-toolbar" aria-label="Typing controls">
-      <div class="ide-title">
-        <span class="window-dot red"></span>
-        <span class="window-dot yellow"></span>
-        <span class="window-dot green"></span>
-        <strong>DevOps Typing Workspace</strong>
+  <main class="typing-shell">
+    <section class="lesson-toolbar" aria-label="Typing setup">
+      <div>
+        <p class="eyebrow">DevOps typing lab</p>
+        <h1>DevOps Typing</h1>
       </div>
-      <div class="ide-controls">
-        <label for="lessonSelect">Lesson</label>
+      <div class="lesson-controls">
+        <label class="select-label" for="lessonSelect">Lesson</label>
         <select id="lessonSelect"></select>
-        <label class="file-button compact-button" for="fileInput">Upload .txt</label>
+        <label class="file-button" for="fileInput">Upload .txt</label>
         <input type="file" id="fileInput" accept=".txt">
-        <button id="resetButton" class="compact-button" type="button">Reset</button>
-        <button id="nextPageButton" class="compact-button ghost-button" type="button">Next file</button>
+        <button id="resetButton" type="button">Reset</button>
       </div>
     </section>
 
-    <section class="ide-workbench" aria-label="Code typing editor">
-      <aside class="activity-bar" aria-label="Activity">
-        <span class="activity-icon active">EX</span>
-        <span class="activity-icon">TF</span>
-        <span class="activity-icon">AZ</span>
-      </aside>
+    <section class="stats-grid" aria-label="Typing statistics">
+      <div class="stat-tile">
+        <span>WPM</span>
+        <strong id="wpm">0</strong>
+      </div>
+      <div class="stat-tile">
+        <span>Accuracy</span>
+        <strong id="accuracy">100%</strong>
+      </div>
+      <div class="stat-tile">
+        <span>Time</span>
+        <strong id="timer">0:00</strong>
+      </div>
+      <div class="stat-tile">
+        <span>Progress</span>
+        <strong id="progressText">0%</strong>
+      </div>
+      <div class="stat-tile">
+        <span>Best WPM</span>
+        <strong id="bestWpm">-</strong>
+      </div>
+    </section>
 
-      <aside class="file-explorer" aria-label="Lesson files">
-        <div class="explorer-title">Explorer</div>
-        <div class="explorer-project">terraform-lab</div>
-        <div id="fileTree" class="file-tree"></div>
-      </aside>
-
-      <section class="editor-pane">
-        <div class="editor-tabs" aria-label="Open file">
-          <button id="activeTab" class="editor-tab active" type="button">providers.tf</button>
-          <div class="editor-progress" aria-hidden="true">
+    <div class="practice-layout">
+      <section class="typing-workspace" aria-label="Typing exercise">
+        <div class="exercise-header">
+          <div>
+            <p class="eyebrow" id="lessonType">Guided lesson</p>
+            <h2 id="lessonTitle">Azure Terraform Starter</h2>
+          </div>
+          <div class="progress-meter" aria-hidden="true">
             <span id="progressBar"></span>
           </div>
         </div>
 
-        <div class="editor-meta">
-          <div>
-            <span id="lessonType">Terraform lesson</span>
-            <strong id="lessonTitle">Azure Terraform Lab</strong>
-            <span id="pageCounter">File 1 of 6</span>
-          </div>
-          <span id="statusMessage" aria-live="polite">Click the editor and start typing.</span>
-        </div>
+        <div id="displayText" class="prompt-text" role="textbox" aria-label="Text to type" tabindex="0"></div>
 
-        <div id="editorSurface" class="code-editor" role="textbox" aria-label="Code to type" tabindex="0">
-          <div id="editorLines" class="editor-lines"></div>
+        <label class="input-label" for="typingArea">Type the highlighted text below</label>
+        <textarea
+          id="typingArea"
+          class="typing-input"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder="Start typing here..."></textarea>
+
+        <div class="input-meta" aria-live="polite">
+          <span id="statusMessage">Focus the box and begin when you are ready.</span>
+          <span id="mistakes">Mistakes: 0</span>
         </div>
       </section>
+
+      <aside class="practice-panel" aria-label="Lesson details">
+        <div class="panel-section">
+          <p class="eyebrow">Next key</p>
+          <strong id="nextKey" class="next-key">T</strong>
+        </div>
+        <div class="panel-section">
+          <p class="eyebrow">Current lesson</p>
+          <p id="lessonSummary">Terraform commands, provider setup, and resource group basics.</p>
+        </div>
+        <div class="panel-section compact">
+          <span class="legend correct"></span>
+          <span>Correct</span>
+          <span class="legend incorrect"></span>
+          <span>Fix</span>
+          <span class="legend current"></span>
+          <span>Current</span>
+        </div>
+      </aside>
+    </div>
+
+    <section class="keyboard-panel" aria-label="On-screen keyboard">
+      <div id="keyboard" class="keyboard"></div>
     </section>
-
-    <footer class="ide-statusbar" aria-label="Typing status">
-      <span id="lineColumn">Ln 1, Col 1</span>
-      <span>WPM <strong id="wpm">0</strong></span>
-      <span>Accuracy <strong id="accuracy">100%</strong></span>
-      <span>Progress <strong id="progressText">0%</strong></span>
-      <span>Best <strong id="bestWpm">-</strong></span>
-      <span id="mistakes">Mistakes 0</span>
-      <span>Time <strong id="timer">0:00</strong></span>
-      <span>Next <strong id="nextKey" class="status-key">T</strong></span>
-    </footer>
-
-    <textarea id="typingCapture" class="typing-capture" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
   </main>
 
   <script src="typing.js"></script>
