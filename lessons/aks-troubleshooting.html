@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AKS Top 20 Troubleshooting</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">AKS diagnostics</p>
+    <h1>AKS Top 20 Troubleshooting</h1>
+    <p>Practice read-only diagnostic commands for cluster access, node health, kube-system failures, pod failures, ingress, DNS, storage, autoscaling, quotas, upgrades, and recent changes.</p>
+
+    <h2>Issue groups</h2>
+    <ul>
+      <li><code>01-access-nodes-kubesystem.sh</code>: kubeconfig, context, NotReady nodes, pressure, kube-system.</li>
+      <li><code>02-pods-images-health.sh</code>: Pending, CrashLoopBackOff, ImagePullBackOff, OOMKilled, probes.</li>
+      <li><code>03-network-storage.sh</code>: services, ingress, DNS, network policies, PVC.</li>
+      <li><code>04-scaling-upgrades-quota.sh</code>: HPA, autoscaler, quota, subnet IPs, upgrades, rollouts.</li>
+    </ul>
+
+    <p><a href="../typing.html">Open Practice</a></p>
+  </main>
+</body>
+</html>

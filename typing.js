@@ -191,6 +191,8 @@ az deployment group what-if --resource-group rg-devops-lab`
 kind: Deployment
 metadata:
   name: typing-practice
+  labels:
+    app: typing-practice
 spec:
   replicas: 2
   selector:
@@ -203,7 +205,270 @@ spec:
     spec:
       containers:
         - name: web
-          image: nginx:1.27`
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi`
+      },
+      {
+        fileName: 'service.yaml',
+        text: `apiVersion: v1
+kind: Service
+metadata:
+  name: typing-practice
+  labels:
+    app: typing-practice
+spec:
+  type: ClusterIP
+  selector:
+    app: typing-practice
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80`
+      },
+      {
+        fileName: 'ingress.yaml',
+        text: `apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: typing-practice
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: typing-practice.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: typing-practice
+                port:
+                  number: 80`
+      },
+      {
+        fileName: 'HPA.yaml',
+        text: `apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: typing-practice
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: typing-practice
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70`
+      },
+      {
+        fileName: 'PV.yaml',
+        text: `apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: typing-practice-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /mnt/data/typing-practice`
+      },
+      {
+        fileName: 'PVC.yaml',
+        text: `apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: typing-practice-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 5Gi`
+      }
+    ]
+  },
+  {
+    title: 'AKS Basic Commands',
+    type: 'AKS command lesson',
+    pages: [
+      {
+        fileName: 'aks-create-and-connect.sh',
+        text: `az login
+az account show
+az group create --name <resource-group> --location <location>
+az aks get-versions --location <location> --output table
+az aks create --name <cluster-name> --resource-group <resource-group> --sku automatic --network-plugin azure --network-plugin-mode overlay --enable-oidc-issuer --enable-workload-identity
+az aks get-credentials --name <cluster-name> --resource-group <resource-group> --overwrite-existing
+kubectl cluster-info
+kubectl get nodes -o wide`
+      },
+      {
+        fileName: 'aks-standard-cluster.sh',
+        text: `az aks create --name <cluster-name> --resource-group <resource-group> --node-count 3 --zones 1 2 3 --network-plugin azure --network-plugin-mode overlay --enable-cluster-autoscaler --min-count 1 --max-count 10 --enable-oidc-issuer --enable-workload-identity
+az aks show --name <cluster-name> --resource-group <resource-group> --query kubernetesVersion
+az aks nodepool list --cluster-name <cluster-name> --resource-group <resource-group> --output table
+az aks nodepool add --cluster-name <cluster-name> --resource-group <resource-group> --name userpool --node-count 2 --mode User
+az aks update --name <cluster-name> --resource-group <resource-group> --enable-oidc-issuer --enable-workload-identity`
+      },
+      {
+        fileName: 'kubectl-daily-use.sh',
+        text: `kubectl config get-contexts
+kubectl config current-context
+kubectl create namespace dev
+kubectl get namespaces
+kubectl apply -f deployment.yaml -n dev
+kubectl apply -f service.yaml -n dev
+kubectl get all -n dev
+kubectl describe deployment typing-practice -n dev
+kubectl logs deployment/typing-practice -n dev
+kubectl exec -it deployment/typing-practice -n dev -- sh`
+      },
+      {
+        fileName: 'aks-operate-and-monitor.sh',
+        text: `kubectl scale deployment typing-practice --replicas=3 -n dev
+kubectl rollout status deployment/typing-practice -n dev
+kubectl top nodes
+kubectl top pods -A
+az aks enable-addons --name <cluster-name> --resource-group <resource-group> --addons monitoring --workspace-resource-id <workspace-resource-id>
+az aks update --name <cluster-name> --resource-group <resource-group> --enable-cluster-autoscaler --min-count 1 --max-count 5
+az aks stop --name <cluster-name> --resource-group <resource-group>
+az aks start --name <cluster-name> --resource-group <resource-group>`
+      }
+    ]
+  },
+  {
+    title: 'AKS Top 20 Troubleshooting',
+    type: 'AKS troubleshooting lesson',
+    pages: [
+      {
+        fileName: '01-access-nodes-kubesystem.sh',
+        text: `# 01 kubectl cannot connect
+az aks show -g <resource-group> -n <cluster-name>
+az aks get-credentials -g <resource-group> -n <cluster-name> --overwrite-existing
+kubectl cluster-info
+
+# 02 wrong context or namespace
+kubectl config get-contexts
+kubectl config use-context <context-name>
+kubectl get ns
+
+# 03 nodes are NotReady
+kubectl get nodes -o wide
+kubectl describe node <node-name>
+kubectl get events -A --sort-by=.lastTimestamp
+
+# 04 node pressure
+kubectl describe node <node-name>
+kubectl top nodes
+kubectl top pods -A
+
+# 05 kube-system pods failing
+kubectl get pods -n kube-system
+kubectl describe pod <pod-name> -n kube-system
+kubectl logs <pod-name> -n kube-system --previous`
+      },
+      {
+        fileName: '02-pods-images-health.sh',
+        text: `# 06 pods stuck Pending
+kubectl get pods -A --field-selector=status.phase=Pending
+kubectl describe pod <pod-name> -n <namespace>
+kubectl get events -n <namespace> --sort-by=.lastTimestamp
+
+# 07 CrashLoopBackOff
+kubectl get pods -n <namespace>
+kubectl logs <pod-name> -n <namespace> --previous
+kubectl describe pod <pod-name> -n <namespace>
+
+# 08 ImagePullBackOff
+kubectl describe pod <pod-name> -n <namespace>
+kubectl get secret -n <namespace>
+az acr repository list --name <acr-name> --output table
+
+# 09 OOMKilled
+kubectl describe pod <pod-name> -n <namespace>
+kubectl top pod <pod-name> -n <namespace>
+kubectl get pod <pod-name> -n <namespace> -o yaml
+
+# 10 readiness or liveness probe failing
+kubectl describe pod <pod-name> -n <namespace>
+kubectl logs <pod-name> -n <namespace>
+kubectl get endpoints <service-name> -n <namespace>`
+      },
+      {
+        fileName: '03-network-storage.sh',
+        text: `# 11 service has no endpoints
+kubectl get svc -n <namespace>
+kubectl get endpoints -n <namespace>
+kubectl get pods --show-labels -n <namespace>
+
+# 12 ingress not routing
+kubectl get ingress -A
+kubectl describe ingress <ingress-name> -n <namespace>
+kubectl get svc <service-name> -n <namespace>
+
+# 13 DNS or CoreDNS issue
+kubectl get pods -n kube-system -l k8s-app=kube-dns
+kubectl logs -n kube-system -l k8s-app=kube-dns
+kubectl run dns-test --image=busybox:1.36 --restart=Never -- nslookup kubernetes.default
+
+# 14 network policy blocking traffic
+kubectl get networkpolicy -A
+kubectl describe networkpolicy <policy-name> -n <namespace>
+kubectl exec -it <pod-name> -n <namespace> -- wget -S <service-name>
+
+# 15 PVC stuck Pending
+kubectl get pv
+kubectl get pvc -A
+kubectl describe pvc <claim-name> -n <namespace>`
+      },
+      {
+        fileName: '04-scaling-upgrades-quota.sh',
+        text: `# 16 HPA not scaling
+kubectl get hpa -A
+kubectl describe hpa <hpa-name> -n <namespace>
+kubectl top pods -n <namespace>
+
+# 17 cluster autoscaler not adding nodes
+az aks nodepool list -g <resource-group> --cluster-name <cluster-name> --output table
+kubectl get pods -A --field-selector=status.phase=Pending
+kubectl describe pod <pod-name> -n <namespace>
+
+# 18 Azure quota or subnet IP exhaustion
+az vm list-usage --location <location> --output table
+az network vnet subnet show -g <resource-group> --vnet-name <vnet-name> --name <subnet-name>
+kubectl get events -A --sort-by=.lastTimestamp
+
+# 19 upgrade blocked or failed
+az aks get-upgrades -g <resource-group> -n <cluster-name> --output table
+az aks show -g <resource-group> -n <cluster-name> --query provisioningState
+az monitor activity-log list -g <resource-group> --max-events 20
+
+# 20 recent change caused outage
+kubectl rollout history deployment/<deployment-name> -n <namespace>
+kubectl rollout status deployment/<deployment-name> -n <namespace>
+kubectl get events -A --sort-by=.lastTimestamp`
       }
     ]
   }
