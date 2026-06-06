@@ -471,6 +471,81 @@ kubectl rollout status deployment/<deployment-name> -n <namespace>
 kubectl get events -A --sort-by=.lastTimestamp`
       }
     ]
+  },
+  {
+    title: 'Terraform CI/CD Pipelines',
+    type: 'CI/CD lesson',
+    pages: [
+      {
+        fileName: 'github-actions.yml',
+        text: `name: Terraform CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve`
+      },
+      {
+        fileName: 'azure-pipelines.yml',
+        text: `trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: TerraformInstaller@0
+  inputs: 
+    terraformVersion: '1.10.5'
+
+- task: TerraformTaskV2@2
+  inputs:
+    command: 'init'
+    workingDirectory: 'terraform'
+
+- task: TerraformTaskV2@2
+  inputs:
+    command: 'plan'
+    workingDirectory: 'terraform'
+
+- task: ManualValidation@0
+  inputs:
+    instructions: 'Approve Terraform Changes?'
+
+- task: TerraformTaskV2@2
+  inputs:
+    command: 'apply'
+    workingDirectory: 'terraform'`
+      }
+    ]
   }
 ];
 
