@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terraform Linux VM & for_each Modules</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Compute & Infrastructure</p>
+    <h1>Terraform Linux Virtual Machine (Normal & for_each Modules)</h1>
+    <p>Understand how to provision Azure Linux VMs individually and how to scale them with reusable modules using <code>for_each</code>.</p>
+
+    <h2>1. Normal Standalone Linux VM</h2>
+    <p>Provision the VNet, Subnet, Public IP, Network Interface (NIC), and <code>azurerm_linux_virtual_machine</code> with SSH keys and Ubuntu Jammy 22.04 LTS.</p>
+
+    <h2>2. Module Architecture</h2>
+    <p>Wrap the NIC, Public IP, and Linux VM into a modular package in <code>modules/linux_vm/</code>.</p>
+
+    <h2>3. Multi-VM for_each Pattern</h2>
+    <p>Loop over a map of VM configurations (such as <code>web</code>, <code>api</code>, <code>worker</code>) to build multi-tier infrastructures dynamically with minimal lines of code.</p>
+
+    <nav class="simple-nav" style="margin-top: 1.5rem;">
+      <a href="../typing.html">Practice in Typing IDE</a>
+      <a href="../lessons.html">Back to Lessons</a>
+    </nav>
+  </main>
+</body>
+</html>

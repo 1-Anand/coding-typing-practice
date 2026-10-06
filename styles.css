@@ -614,6 +614,16 @@ button:hover,
   text-align: center;
 }
 
+.smart-mode-badge {
+  background: rgba(15, 159, 143, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+  color: #d1fae5;
+  font-weight: 700;
+  margin-left: auto;
+  padding: 1px 7px;
+}
+
 .typing-capture {
   height: 1px;
   left: -9999px;

@@ -1,0 +1,37 @@
+# 1. One-time Batch Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration-job
+  namespace: devops-practice
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: busybox:1.36
+          command: ["sh", "-c", "echo 'Running schema migrations...'; sleep 3; echo 'Migrations completed.'"]
+
+---
+# 2. Recurring CronJob (runs every night at 2:00 AM)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-backup-cronjob
+  namespace: devops-practice
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: busybox:1.36
+              command: ["sh", "-c", "echo 'Backing up database snapshot...'; sleep 5; echo 'Backup success.'"]

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kubernetes Manifests Practice</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Orchestration & YAML</p>
+    <h1>All Essential Kubernetes Manifests</h1>
+    <p>A complete inventory of production Kubernetes resource declarations with clean required spacing and standard YAML conventions.</p>
+
+    <h2>Core Workloads & Config</h2>
+    <ul>
+      <li><strong>Namespace:</strong> Project and team environment isolation (<code>01-namespace.yaml</code>).</li>
+      <li><strong>ConfigMap:</strong> Environment variables and JSON application settings (<code>02-configmap.yaml</code>).</li>
+      <li><strong>Secret:</strong> Sensitive database passwords and API tokens (<code>03-secret.yaml</code>).</li>
+      <li><strong>Deployment:</strong> 3-replica production rolling update, securityContext, probes, and resource requests/limits (<code>06-deployment.yaml</code>).</li>
+      <li><strong>Service:</strong> ClusterIP, NodePort, LoadBalancer, and Headless service patterns (<code>07-service.yaml</code>).</li>
+      <li><strong>Ingress:</strong> NGINX ingress routing with TLS termination and path rewrites (<code>08-ingress.yaml</code>).</li>
+    </ul>
+
+    <h2>Storage, Autoscaling & Security</h2>
+    <ul>
+      <li><strong>PV &amp; PVC:</strong> PersistentVolumes and PersistentVolumeClaims for storage (<code>04-pv.yaml</code>, <code>05-pvc.yaml</code>).</li>
+      <li><strong>HPA:</strong> Dynamic horizontal autoscaling based on CPU and memory metrics (<code>09-hpa.yaml</code>).</li>
+      <li><strong>StatefulSet:</strong> Stateful workloads with persistent volume templates (<code>10-statefulset.yaml</code>).</li>
+      <li><strong>RBAC:</strong> ServiceAccount, Role, and RoleBinding for least-privilege access control (<code>13-rbac.yaml</code>).</li>
+      <li><strong>NetworkPolicy:</strong> Fine-grained pod traffic ingress/egress restriction (<code>14-networkpolicy.yaml</code>).</li>
+    </ul>
+
+    <nav class="simple-nav" style="margin-top: 1.5rem;">
+      <a href="../typing.html">Practice in Typing IDE</a>
+      <a href="../lessons.html">Back to Lessons</a>
+    </nav>
+  </main>
+</body>
+</html>

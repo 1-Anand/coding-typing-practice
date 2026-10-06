@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Stage Dockerfiles (React, .NET, Python)</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Containerization</p>
+    <h1>Multi-Stage Dockerfiles (React, .NET, Python)</h1>
+    <p>Multi-stage Docker builds separate build dependencies from production runtimes to drastically reduce image size and attack surface.</p>
+
+    <h2>1. React Application</h2>
+    <ul>
+      <li><strong>Build Stage:</strong> <code>node:20-alpine</code> runs <code>npm ci</code> and <code>npm run build</code>.</li>
+      <li><strong>Run Stage:</strong> <code>nginx:1.27-alpine</code> serves the static HTML/JS/CSS assets with SPA client routing fallbacks.</li>
+    </ul>
+
+    <h2>2. .NET 8 Application</h2>
+    <ul>
+      <li><strong>Build Stage:</strong> <code>mcr.microsoft.com/dotnet/sdk:8.0</code> restores packages and publishes optimized binaries.</li>
+      <li><strong>Run Stage:</strong> <code>mcr.microsoft.com/dotnet/aspnet:8.0-alpine</code> runs the app under non-root user <code>app</code> on port 8080.</li>
+    </ul>
+
+    <h2>3. Python Application</h2>
+    <ul>
+      <li><strong>Build Stage:</strong> <code>python:3.12-slim</code> sets up a virtual environment and compiles package wheels.</li>
+      <li><strong>Run Stage:</strong> Copies the clean <code>/opt/venv</code> without build tools or compilers, running as a non-root system user.</li>
+    </ul>
+
+    <nav class="simple-nav" style="margin-top: 1.5rem;">
+      <a href="../typing.html">Practice in Typing IDE</a>
+      <a href="../lessons.html">Back to Lessons</a>
+    </nav>
+  </main>
+</body>
+</html>

@@ -1,272 +1,587 @@
 const lessons = [
   {
-    title: 'Azure Terraform Lab',
+    title: 'Terraform: Storage Account (Normal & for_each Module)',
     type: 'Terraform lesson',
     pages: [
       {
-        fileName: 'providers.tf',
-        text: `terraform {
-  required_version = ">= 1.6.0"
-
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.0"
-    }
-
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
+        fileName: 'storage-normal.tf',
+        text: `resource "azurerm_resource_group" "rg" {
+  name = "rg-devops-dev"
+  location = "eastus"
+  tags = {
+    Environment = "dev"
+    ManagedBy = "Terraform"
   }
 }
 
-provider "azurerm" {
-  subscription_id                 = var.subscription_id
-  resource_provider_registrations = "core"
+resource "azurerm_storage_account" "sa" {
+  name = "stdevops01"
+  resource_group_name = azurerm_resource_group.rg.name
+  location = azurerm_resource_group.rg.location
+  account_tier = "Standard"
+  account_replication_type = "LRS"
+  account_kind = "StorageV2"
+  min_tls_version = "TLS1_2"
+  https_traffic_only_enabled = true
 
-  features {}
+  blob_properties {
+    versioning_enabled = true
+    delete_retention_policy {
+      days = 7
+    }
+  }
+
+  tags = {
+    Environment = "dev"
+  }
+}
+
+resource "azurerm_storage_container" "data" {
+  name = "data-container"
+  storage_account_id = azurerm_storage_account.sa.id
+  container_access_type = "private"
 }`
       },
       {
-        fileName: 'resource-group.tf',
-        text: `locals {
-  name_prefix = "\${var.project_name}-\${var.environment}"
-
-  common_tags = {
-    environment = var.environment
-    managed_by  = "terraform"
-    project     = var.project_name
-  }
-}
-
-resource "azurerm_resource_group" "main" {
-  name     = "rg-\${local.name_prefix}"
+        fileName: 'modules/storage_account/main.tf',
+        text: `resource "azurerm_storage_account" "this" {
+  name = var.name
+  resource_group_name = var.resource_group_name
   location = var.location
-  tags     = local.common_tags
-}`
-      },
-      {
-        fileName: 'network.tf',
-        text: `resource "azurerm_virtual_network" "main" {
-  name                = "vnet-\${local.name_prefix}"
-  address_space       = ["10.40.0.0/16"]
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  tags                = local.common_tags
+  account_tier = var.account_tier
+  account_replication_type = var.account_replication_type
+  min_tls_version = "TLS1_2"
+  tags = var.tags
 }
 
-resource "azurerm_subnet" "vm" {
-  name                 = "snet-vm"
-  resource_group_name  = azurerm_resource_group.main.name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = ["10.40.1.0/24"]
+resource "azurerm_storage_container" "this" {
+  count = var.container_name != null ? 1 : 0
+  name = var.container_name
+  storage_account_id = azurerm_storage_account.this.id
+  container_access_type = "private"
 }`
       },
       {
-        fileName: 'security.tf',
-        text: `resource "azurerm_network_security_group" "vm" {
-  name                = "nsg-vm-\${local.name_prefix}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  tags                = local.common_tags
-
-  security_rule {
-    name                       = "AllowSSH"
-    priority                   = 1000
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = var.ssh_source_address_prefix
-    destination_address_prefix = "*"
+        fileName: 'storage-for-each.tf',
+        text: `locals {
+  storage_accounts = {
+    logs = {
+      name = "stdevopslogs01"
+      tier = "Standard"
+      replication = "LRS"
+    }
+    data = {
+      name = "stdevopsdata01"
+      tier = "Standard"
+      replication = "ZRS"
+    }
+    backups = {
+      name = "stdevopsbkp01"
+      tier = "Standard"
+      replication = "GRS"
+    }
   }
 }
 
-resource "azurerm_subnet_network_security_group_association" "vm" {
-  subnet_id                 = azurerm_subnet.vm.id
-  network_security_group_id = azurerm_network_security_group.vm.id
+module "storage_accounts" {
+  source = "./modules/storage_account"
+  for_each = local.storage_accounts
+
+  name = each.value.name
+  resource_group_name = azurerm_resource_group.rg.name
+  location = azurerm_resource_group.rg.location
+  account_tier = each.value.tier
+  account_replication_type = each.value.replication
+  tags = {
+    Role = each.key
+    Environment = "dev"
+  }
 }`
-      },
+      }
+    ]
+  },
+  {
+    title: 'Terraform: Linux VM (Normal & for_each Module)',
+    type: 'Terraform lesson',
+    pages: [
       {
-        fileName: 'storage.tf',
-        text: `resource "random_string" "suffix" {
-  length  = 6
-  lower   = true
-  numeric = true
-  special = false
-  upper   = false
+        fileName: 'linux-vm-normal.tf',
+        text: `resource "azurerm_public_ip" "pip" {
+  name = "pip-vm-dev"
+  location = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method = "Static"
+  sku = "Standard"
 }
 
-resource "azurerm_storage_account" "main" {
-  name                            = "st\${var.project_name}\${var.environment}\${random_string.suffix.result}"
-  resource_group_name             = azurerm_resource_group.main.name
-  location                        = azurerm_resource_group.main.location
-  account_tier                    = "Standard"
-  account_replication_type        = "LRS"
-  min_tls_version                 = "TLS1_2"
-  https_traffic_only_enabled      = true
-  allow_nested_items_to_be_public = false
-  tags                            = local.common_tags
-}`
-      },
-      {
-        fileName: 'vm.tf',
-        text: `resource "azurerm_public_ip" "vm" {
-  name                = "pip-vm-\${local.name_prefix}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  tags                = local.common_tags
-}
-
-resource "azurerm_network_interface" "vm" {
-  name                = "nic-vm-\${local.name_prefix}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+resource "azurerm_network_interface" "nic" {
+  name = "nic-vm-dev"
+  location = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
-    name                          = "primary"
-    subnet_id                     = azurerm_subnet.vm.id
+    name = "internal"
+    subnet_id = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.vm.id
+    public_ip_address_id = azurerm_public_ip.pip.id
   }
 }
 
 resource "azurerm_linux_virtual_machine" "vm" {
-  name                  = "vm-\${local.name_prefix}"
-  location              = azurerm_resource_group.main.location
-  resource_group_name   = azurerm_resource_group.main.name
-  size                  = var.vm_size
-  admin_username        = var.admin_username
-  network_interface_ids = [azurerm_network_interface.vm.id]
-
+  name = "vm-dev-web"
+  resource_group_name = azurerm_resource_group.rg.name
+  location = azurerm_resource_group.rg.location
+  size = "Standard_B2s"
+  admin_username = "azureuser"
   disable_password_authentication = true
+  network_interface_ids = [azurerm_network_interface.nic.id]
 
   admin_ssh_key {
-    username   = var.admin_username
-    public_key = var.admin_ssh_public_key
+    username = "azureuser"
+    public_key = var.ssh_public_key
   }
 
   os_disk {
-    caching              = "ReadWrite"
+    caching = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
 
   source_image_reference {
     publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts"
-    version   = "latest"
+    offer = "0001-com-ubuntu-server-jammy"
+    sku = "22_04-lts"
+    version = "latest"
+  }
+}`
+      },
+      {
+        fileName: 'modules/linux_vm/main.tf',
+        text: `resource "azurerm_public_ip" "this" {
+  name = "pip-\${var.vm_name}"
+  location = var.location
+  resource_group_name = var.resource_group_name
+  allocation_method = "Static"
+  sku = "Standard"
+  tags = var.tags
+}
+
+resource "azurerm_network_interface" "this" {
+  name = "nic-\${var.vm_name}"
+  location = var.location
+  resource_group_name = var.resource_group_name
+  tags = var.tags
+
+  ip_configuration {
+    name = "internal"
+    subnet_id = var.subnet_id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id = azurerm_public_ip.this.id
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "this" {
+  name = var.vm_name
+  resource_group_name = var.resource_group_name
+  location = var.location
+  size = var.vm_size
+  admin_username = var.admin_username
+  disable_password_authentication = true
+  network_interface_ids = [azurerm_network_interface.this.id]
+  tags = var.tags
+
+  admin_ssh_key {
+    username = var.admin_username
+    public_key = var.admin_ssh_public_key
   }
 
-  tags = local.common_tags
+  os_disk {
+    caching = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer = "0001-com-ubuntu-server-jammy"
+    sku = "22_04-lts"
+    version = "latest"
+  }
+}`
+      },
+      {
+        fileName: 'linux-vm-for-each.tf',
+        text: `locals {
+  vms = {
+    web = {
+      size = "Standard_B2s"
+      role = "frontend"
+    }
+    api = {
+      size = "Standard_B2s"
+      role = "backend"
+    }
+  }
+}
+
+module "linux_vms" {
+  source = "./modules/linux_vm"
+  for_each = local.vms
+
+  vm_name = each.key
+  resource_group_name = azurerm_resource_group.rg.name
+  location = azurerm_resource_group.rg.location
+  subnet_id = azurerm_subnet.subnet.id
+  vm_size = each.value.size
+  admin_username = "azureuser"
+  admin_ssh_public_key = var.ssh_public_key
+  tags = {
+    Role = each.value.role
+    Environment = "dev"
+  }
 }`
       }
     ]
   },
   {
-    title: 'Azure CLI Warmup',
-    type: 'Azure lesson',
+    title: 'Docker: Multi-Stage Dockerfiles (React, .NET, Python)',
+    type: 'Docker lesson',
     pages: [
       {
-        fileName: 'azure-cli.txt',
-        text: `az login
-az account show
-az account set --subscription "<subscription-id>"
-az group create --name rg-devops-lab --location eastus
-az deployment group what-if --resource-group rg-devops-lab`
+        fileName: 'react.Dockerfile',
+        text: `# Stage 1: Build React application
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# Stage 2: Production runtime with Nginx
+FROM nginx:1.27-alpine AS runner
+WORKDIR /usr/share/nginx/html
+
+RUN rm -rf ./*
+COPY --from=builder /app/dist ./
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \\
+  CMD wget -qO- http://localhost:80/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]`
+      },
+      {
+        fileName: 'dotnet.Dockerfile',
+        text: `# Stage 1: Build .NET application
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+COPY *.csproj ./
+RUN dotnet restore
+
+COPY . ./
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
+
+# Stage 2: Minimal ASP.NET runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
+WORKDIR /app
+
+USER app
+COPY --from=build --chown=app:app /app/publish ./
+
+ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_EnableDiagnostics=0
+EXPOSE 8080
+
+ENTRYPOINT ["dotnet", "App.dll"]`
+      },
+      {
+        fileName: 'python.Dockerfile',
+        text: `# Stage 1: Build virtualenv dependencies
+FROM python:3.12-slim AS builder
+WORKDIR /app
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Stage 2: Secure slim runtime
+FROM python:3.12-slim AS runner
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \\
+    PYTHONDONTWRITEBYTECODE=1 \\
+    PATH="/opt/venv/bin:$PATH"
+
+RUN useradd -u 1000 -m appuser
+
+COPY --from=builder /opt/venv /opt/venv
+COPY . .
+
+USER appuser
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]`
       }
     ]
   },
   {
-    title: 'Kubernetes Manifest',
+    title: 'Docker: Essential Commands & Uses',
+    type: 'Docker lesson',
+    pages: [
+      {
+        fileName: '01-docker-lifecycle.sh',
+        text: `# Build and tag images
+docker build -t myapp:1.0 .
+docker build --no-cache -t myapp:latest .
+docker tag myapp:latest myregistry.azurecr.io/myapp:1.0
+docker images
+docker history myapp:latest
+
+# Run containers with port and environment
+docker run -d --name web -p 8080:80 myapp:1.0
+docker run -d --name db -e MYSQL_ROOT_PASSWORD=secret -v db-data:/var/lib/mysql mysql:8
+docker ps
+docker ps -a
+docker stop web db
+docker start web
+docker restart web
+docker rm -f web db
+docker rmi myapp:1.0`
+      },
+      {
+        fileName: '02-docker-inspect-troubleshoot.sh',
+        text: `# Follow container logs live
+docker logs -f --tail 100 web
+
+# Open interactive shell inside running container
+docker exec -it web sh
+
+# Inspect container metadata and IP address
+docker inspect web --format='{{.NetworkSettings.IPAddress}}'
+
+# Stream container resource consumption
+docker stats --no-stream
+
+# View running processes inside container
+docker top web
+
+# Copy file into or out of container
+docker cp web:/app/config.json ./config.json`
+      },
+      {
+        fileName: '03-docker-network-volumes-compose.sh',
+        text: `# Create and inspect custom bridge network
+docker network create --driver bridge app-net
+docker network connect app-net web
+docker network inspect app-net
+
+# Create and manage persistent volumes
+docker volume create app-storage
+docker volume ls
+docker volume inspect app-storage
+
+# System cleanup (reclaim disk space)
+docker system df
+docker system prune -f
+docker system prune -a --volumes -f
+
+# Docker Compose workflows
+docker compose up -d
+docker compose ps
+docker compose logs -f web
+docker compose down -v`
+      }
+    ]
+  },
+  {
+    title: 'Kubernetes: Core Manifests',
     type: 'Kubernetes lesson',
     pages: [
       {
-        fileName: 'deployment.yaml',
+        fileName: '01-namespace.yaml',
+        text: `apiVersion: v1
+kind: Namespace
+metadata:
+  name: devops-practice
+  labels:
+    environment: dev
+    team: devops`
+      },
+      {
+        fileName: '02-configmap.yaml',
+        text: `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: devops-practice
+data:
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+  PORT: "8080"`
+      },
+      {
+        fileName: '03-secret.yaml',
+        text: `apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+  namespace: devops-practice
+type: Opaque
+stringData:
+  DB_PASSWORD: "SuperSecretPassword123!"
+  API_KEY: "prod-key-xyz-98765"`
+      },
+      {
+        fileName: '06-deployment.yaml',
         text: `apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: typing-practice
+  name: web-api
+  namespace: devops-practice
   labels:
-    app: typing-practice
+    app: web-api
 spec:
-  replicas: 2
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
-      app: typing-practice
+      app: web-api
   template:
     metadata:
       labels:
-        app: typing-practice
+        app: web-api
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
-        - name: web
-          image: nginx:1.27
+        - name: api
+          image: nginx:1.27-alpine
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           resources:
             requests:
               cpu: 100m
               memory: 128Mi
             limits:
               cpu: 500m
-              memory: 256Mi`
+              memory: 256Mi
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5`
       },
       {
-        fileName: 'service.yaml',
+        fileName: '07-service.yaml',
         text: `apiVersion: v1
 kind: Service
 metadata:
-  name: typing-practice
-  labels:
-    app: typing-practice
+  name: web-api-service
+  namespace: devops-practice
 spec:
   type: ClusterIP
   selector:
-    app: typing-practice
+    app: web-api
   ports:
     - name: http
       protocol: TCP
       port: 80
-      targetPort: 80`
+      targetPort: 8080`
       },
       {
-        fileName: 'ingress.yaml',
+        fileName: '08-ingress.yaml',
         text: `apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: typing-practice
+  name: web-api-ingress
+  namespace: devops-practice
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
-    - host: typing-practice.example.com
+    - host: api.devops.example.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: typing-practice
+                name: web-api-service
                 port:
                   number: 80`
+      }
+    ]
+  },
+  {
+    title: 'Kubernetes: Storage & Advanced Manifests',
+    type: 'Kubernetes lesson',
+    pages: [
+      {
+        fileName: '04-pv.yaml',
+        text: `apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: app-storage-pv
+spec:
+  storageClassName: standard
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /mnt/data/app-storage`
       },
       {
-        fileName: 'HPA.yaml',
+        fileName: '05-pvc.yaml',
+        text: `apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-storage-pvc
+  namespace: devops-practice
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi`
+      },
+      {
+        fileName: '09-hpa.yaml',
         text: `apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: typing-practice
+  name: web-api-hpa
+  namespace: devops-practice
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: typing-practice
+    name: web-api
   minReplicas: 2
   maxReplicas: 10
   metrics:
@@ -275,37 +590,97 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 70`
+          averageUtilization: 75`
       },
       {
-        fileName: 'PV.yaml',
-        text: `apiVersion: v1
-kind: PersistentVolume
+        fileName: '10-statefulset.yaml',
+        text: `apiVersion: apps/v1
+kind: StatefulSet
 metadata:
-  name: typing-practice-pv
+  name: database
+  namespace: devops-practice
 spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: manual
-  hostPath:
-    path: /mnt/data/typing-practice`
+  serviceName: "db-headless"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 5Gi`
       },
       {
-        fileName: 'PVC.yaml',
+        fileName: '13-rbac.yaml',
         text: `apiVersion: v1
-kind: PersistentVolumeClaim
+kind: ServiceAccount
 metadata:
-  name: typing-practice-pvc
+  name: app-sa
+  namespace: devops-practice
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-reader
+  namespace: devops-practice
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "configmaps"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-pods-binding
+  namespace: devops-practice
+subjects:
+  - kind: ServiceAccount
+    name: app-sa
+    namespace: devops-practice
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io`
+      },
+      {
+        fileName: '14-networkpolicy.yaml',
+        text: `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-network-policy
+  namespace: devops-practice
 spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: manual
-  resources:
-    requests:
-      storage: 5Gi`
+  podSelector:
+    matchLabels:
+      app: web-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - protocol: TCP
+          port: 8080`
       }
     ]
   },
@@ -317,20 +692,12 @@ spec:
         fileName: 'aks-create-and-connect.sh',
         text: `az login
 az account show
-az group create --name <resource-group> --location <location>
-az aks get-versions --location <location> --output table
-az aks create --name <cluster-name> --resource-group <resource-group> --sku automatic --network-plugin azure --network-plugin-mode overlay --enable-oidc-issuer --enable-workload-identity
+az group create --name <resource-group> --location eastus
+az aks get-versions --location eastus --output table
+az aks create --name <cluster-name> --resource-group <resource-group> --node-count 3
 az aks get-credentials --name <cluster-name> --resource-group <resource-group> --overwrite-existing
 kubectl cluster-info
 kubectl get nodes -o wide`
-      },
-      {
-        fileName: 'aks-standard-cluster.sh',
-        text: `az aks create --name <cluster-name> --resource-group <resource-group> --node-count 3 --zones 1 2 3 --network-plugin azure --network-plugin-mode overlay --enable-cluster-autoscaler --min-count 1 --max-count 10 --enable-oidc-issuer --enable-workload-identity
-az aks show --name <cluster-name> --resource-group <resource-group> --query kubernetesVersion
-az aks nodepool list --cluster-name <cluster-name> --resource-group <resource-group> --output table
-az aks nodepool add --cluster-name <cluster-name> --resource-group <resource-group> --name userpool --node-count 2 --mode User
-az aks update --name <cluster-name> --resource-group <resource-group> --enable-oidc-issuer --enable-workload-identity`
       },
       {
         fileName: 'kubectl-daily-use.sh',
@@ -341,20 +708,9 @@ kubectl get namespaces
 kubectl apply -f deployment.yaml -n dev
 kubectl apply -f service.yaml -n dev
 kubectl get all -n dev
-kubectl describe deployment typing-practice -n dev
-kubectl logs deployment/typing-practice -n dev
-kubectl exec -it deployment/typing-practice -n dev -- sh`
-      },
-      {
-        fileName: 'aks-operate-and-monitor.sh',
-        text: `kubectl scale deployment typing-practice --replicas=3 -n dev
-kubectl rollout status deployment/typing-practice -n dev
-kubectl top nodes
-kubectl top pods -A
-az aks enable-addons --name <cluster-name> --resource-group <resource-group> --addons monitoring --workspace-resource-id <workspace-resource-id>
-az aks update --name <cluster-name> --resource-group <resource-group> --enable-cluster-autoscaler --min-count 1 --max-count 5
-az aks stop --name <cluster-name> --resource-group <resource-group>
-az aks start --name <cluster-name> --resource-group <resource-group>`
+kubectl describe deployment web-api -n dev
+kubectl logs deployment/web-api -n dev
+kubectl exec -it deployment/web-api -n dev -- sh`
       }
     ]
   },
@@ -363,112 +719,40 @@ az aks start --name <cluster-name> --resource-group <resource-group>`
     type: 'AKS troubleshooting lesson',
     pages: [
       {
-        fileName: '01-access-nodes-kubesystem.sh',
-        text: `# 01 kubectl cannot connect
-az aks show -g <resource-group> -n <cluster-name>
+        fileName: '01-nodes-and-system.sh',
+        text: `# 01 Check connection and context
 az aks get-credentials -g <resource-group> -n <cluster-name> --overwrite-existing
 kubectl cluster-info
-
-# 02 wrong context or namespace
 kubectl config get-contexts
-kubectl config use-context <context-name>
-kubectl get ns
 
-# 03 nodes are NotReady
+# 02 Node status and events
 kubectl get nodes -o wide
 kubectl describe node <node-name>
 kubectl get events -A --sort-by=.lastTimestamp
-
-# 04 node pressure
-kubectl describe node <node-name>
 kubectl top nodes
 kubectl top pods -A
 
-# 05 kube-system pods failing
+# 03 kube-system health
 kubectl get pods -n kube-system
-kubectl describe pod <pod-name> -n kube-system
 kubectl logs <pod-name> -n kube-system --previous`
       },
       {
-        fileName: '02-pods-images-health.sh',
-        text: `# 06 pods stuck Pending
+        fileName: '02-pods-and-workloads.sh',
+        text: `# 04 Pods stuck Pending
 kubectl get pods -A --field-selector=status.phase=Pending
 kubectl describe pod <pod-name> -n <namespace>
-kubectl get events -n <namespace> --sort-by=.lastTimestamp
 
-# 07 CrashLoopBackOff
+# 05 CrashLoopBackOff & OOMKilled
 kubectl get pods -n <namespace>
 kubectl logs <pod-name> -n <namespace> --previous
 kubectl describe pod <pod-name> -n <namespace>
-
-# 08 ImagePullBackOff
-kubectl describe pod <pod-name> -n <namespace>
-kubectl get secret -n <namespace>
-az acr repository list --name <acr-name> --output table
-
-# 09 OOMKilled
-kubectl describe pod <pod-name> -n <namespace>
 kubectl top pod <pod-name> -n <namespace>
-kubectl get pod <pod-name> -n <namespace> -o yaml
 
-# 10 readiness or liveness probe failing
-kubectl describe pod <pod-name> -n <namespace>
-kubectl logs <pod-name> -n <namespace>
-kubectl get endpoints <service-name> -n <namespace>`
-      },
-      {
-        fileName: '03-network-storage.sh',
-        text: `# 11 service has no endpoints
+# 06 Network endpoints & Ingress
 kubectl get svc -n <namespace>
-kubectl get endpoints -n <namespace>
-kubectl get pods --show-labels -n <namespace>
-
-# 12 ingress not routing
+kubectl get endpoints <service-name> -n <namespace>
 kubectl get ingress -A
-kubectl describe ingress <ingress-name> -n <namespace>
-kubectl get svc <service-name> -n <namespace>
-
-# 13 DNS or CoreDNS issue
-kubectl get pods -n kube-system -l k8s-app=kube-dns
-kubectl logs -n kube-system -l k8s-app=kube-dns
-kubectl run dns-test --image=busybox:1.36 --restart=Never -- nslookup kubernetes.default
-
-# 14 network policy blocking traffic
-kubectl get networkpolicy -A
-kubectl describe networkpolicy <policy-name> -n <namespace>
-kubectl exec -it <pod-name> -n <namespace> -- wget -S <service-name>
-
-# 15 PVC stuck Pending
-kubectl get pv
-kubectl get pvc -A
-kubectl describe pvc <claim-name> -n <namespace>`
-      },
-      {
-        fileName: '04-scaling-upgrades-quota.sh',
-        text: `# 16 HPA not scaling
-kubectl get hpa -A
-kubectl describe hpa <hpa-name> -n <namespace>
-kubectl top pods -n <namespace>
-
-# 17 cluster autoscaler not adding nodes
-az aks nodepool list -g <resource-group> --cluster-name <cluster-name> --output table
-kubectl get pods -A --field-selector=status.phase=Pending
-kubectl describe pod <pod-name> -n <namespace>
-
-# 18 Azure quota or subnet IP exhaustion
-az vm list-usage --location <location> --output table
-az network vnet subnet show -g <resource-group> --vnet-name <vnet-name> --name <subnet-name>
-kubectl get events -A --sort-by=.lastTimestamp
-
-# 19 upgrade blocked or failed
-az aks get-upgrades -g <resource-group> -n <cluster-name> --output table
-az aks show -g <resource-group> -n <cluster-name> --query provisioningState
-az monitor activity-log list -g <resource-group> --max-events 20
-
-# 20 recent change caused outage
-kubectl rollout history deployment/<deployment-name> -n <namespace>
-kubectl rollout status deployment/<deployment-name> -n <namespace>
-kubectl get events -A --sort-by=.lastTimestamp`
+kubectl describe ingress <ingress-name> -n <namespace>`
       }
     ]
   },
@@ -498,7 +782,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.10.5"
+          terraform_version: "1.9.8"
 
       - name: Terraform Init
         run: terraform init
@@ -523,8 +807,8 @@ pool:
 
 steps:
 - task: TerraformInstaller@0
-  inputs: 
-    terraformVersion: '1.10.5'
+  inputs:
+    terraformVersion: '1.9.8'
 
 - task: TerraformTaskV2@2
   inputs:
@@ -582,6 +866,7 @@ let startedAt = null;
 let timerId = null;
 let completionTimer = null;
 let pageCompleted = false;
+let inputHistory = [];
 const completedPages = new Map();
 
 function init() {
@@ -616,6 +901,7 @@ function bindEvents() {
 }
 
 function renderLessonOptions() {
+  elements.lessonSelect.innerHTML = '';
   lessons.forEach((lesson, index) => {
     const option = document.createElement('option');
     option.value = index;
@@ -643,6 +929,7 @@ function loadPage(pageIndex) {
   activePageIndex = pageIndex;
   targetText = page.text;
   typedText = '';
+  inputHistory = [];
   pageCompleted = false;
   startedAt = null;
   elements.activeTab.textContent = page.fileName;
@@ -655,7 +942,7 @@ function loadPage(pageIndex) {
   renderFileTree();
   renderEditor();
   updateStats();
-  setStatus('Click the editor and type directly on the code.');
+  setStatus('Smart typing active: Enter auto-indents. Type code directly without spacing hassle.');
   focusEditor();
 }
 
@@ -719,7 +1006,7 @@ function renderFileTree() {
     button.className = 'file-item';
     button.classList.toggle('active', index === activePageIndex);
     button.classList.toggle('done', completedSet.has(index));
-    button.innerHTML = `<span>${completedSet.has(index) ? 'ok' : 'tf'}</span><strong></strong>`;
+    button.innerHTML = `<span>${completedSet.has(index) ? 'ok' : 'code'}</span><strong></strong>`;
     button.querySelector('strong').textContent = page.fileName;
     button.addEventListener('click', () => loadPage(index));
     elements.fileTree.appendChild(button);
@@ -816,6 +1103,8 @@ function getActiveTokenRange(position) {
   return { start, end };
 }
 
+/* SMART TYPING ENGINE (VS CODE STYLE: AUTO-INDENT & REQUIRED SPACES ONLY) */
+
 function handleKeydown(event) {
   if (event.ctrlKey || event.metaKey || event.altKey) {
     return;
@@ -823,29 +1112,120 @@ function handleKeydown(event) {
 
   if (event.key === 'Backspace') {
     event.preventDefault();
-    typedText = typedText.slice(0, -1);
-    pageCompleted = false;
-    elements.editorSurface.classList.remove('page-complete');
-    afterTypingChange();
+    if (typedText.length > 0) {
+      const step = inputHistory.pop() || 1;
+      typedText = typedText.slice(0, Math.max(0, typedText.length - step));
+      pageCompleted = false;
+      elements.editorSurface.classList.remove('page-complete');
+      afterTypingChange();
+    }
     return;
   }
 
   if (event.key === 'Enter') {
     event.preventDefault();
-    addTypedText('\n');
+    handleEnterKey();
     return;
   }
 
   if (event.key === 'Tab') {
     event.preventDefault();
-    addTypedText(getIndentText());
+    handleTabKey();
+    return;
+  }
+
+  if (event.key === ' ') {
+    event.preventDefault();
+    handleSpaceKey();
     return;
   }
 
   if (event.key.length === 1) {
     event.preventDefault();
-    addTypedText(event.key);
+    handleCharacterKey(event.key);
+    return;
   }
+}
+
+function handleEnterKey() {
+  if (pageCompleted) return;
+
+  // If next expected character is newline
+  if (typedText.length < targetText.length && targetText[typedText.length] === '\n') {
+    let toAdd = '\n';
+    let nextIdx = typedText.length + 1;
+
+    // Auto-advance past consecutive blank lines
+    while (nextIdx < targetText.length && targetText[nextIdx] === '\n') {
+      toAdd += '\n';
+      nextIdx++;
+    }
+
+    // Auto-indent: include leading spaces of the new line so human does not type them
+    while (nextIdx < targetText.length && targetText[nextIdx] === ' ') {
+      toAdd += ' ';
+      nextIdx++;
+    }
+
+    inputHistory.push(toAdd.length);
+    addTypedText(toAdd);
+  } else {
+    // If user hit Enter before end of line, still record action
+    inputHistory.push(1);
+    addTypedText('\n');
+  }
+}
+
+function handleSpaceKey() {
+  if (pageCompleted) return;
+
+  if (typedText.length < targetText.length && targetText[typedText.length] === ' ') {
+    // Advance through ALL consecutive spaces in one single press
+    let count = 0;
+    while (typedText.length + count < targetText.length && targetText[typedText.length + count] === ' ') {
+      count++;
+    }
+    const toAdd = targetText.slice(typedText.length, typedText.length + count);
+    inputHistory.push(toAdd.length);
+    addTypedText(toAdd);
+  } else {
+    inputHistory.push(1);
+    addTypedText(' ');
+  }
+}
+
+function handleTabKey() {
+  if (pageCompleted) return;
+
+  if (typedText.length < targetText.length && targetText[typedText.length] === ' ') {
+    handleSpaceKey();
+  } else {
+    const indent = getIndentText();
+    inputHistory.push(indent.length);
+    addTypedText(indent);
+  }
+}
+
+function handleCharacterKey(char) {
+  if (pageCompleted) return;
+
+  // Check if expected position starts with spaces and matches character right after
+  let spaceCount = 0;
+  while (typedText.length + spaceCount < targetText.length && targetText[typedText.length + spaceCount] === ' ') {
+    spaceCount++;
+  }
+
+  if (spaceCount > 0 && typedText.length + spaceCount < targetText.length && targetText[typedText.length + spaceCount] === char) {
+    // Automatically advance through intermediate spaces and accept the matching character
+    const toAdd = targetText.slice(typedText.length, typedText.length + spaceCount) + char;
+    inputHistory.push(toAdd.length);
+    addTypedText(toAdd);
+    return;
+  }
+
+  // Standard character matching
+  inputHistory.push(1);
+  addTypedText(char);
 }
 
 function handleCaptureInput() {
@@ -853,7 +1233,16 @@ function handleCaptureInput() {
   elements.typingCapture.value = '';
 
   if (value) {
-    addTypedText(value.replace(/\r\n/g, '\n'));
+    const cleanValue = value.replace(/\r\n/g, '\n');
+    for (const ch of cleanValue) {
+      if (ch === '\n') {
+        handleEnterKey();
+      } else if (ch === ' ') {
+        handleSpaceKey();
+      } else {
+        handleCharacterKey(ch);
+      }
+    }
   }
 }
 
@@ -875,11 +1264,11 @@ function afterTypingChange() {
   if (typedText.length === targetText.length && mistakes === 0) {
     completePage();
   } else if (typedText.length === targetText.length && mistakes > 0) {
-    setStatus('End reached. Use Backspace and fix the red code before continuing.');
+    setStatus('End reached. Use Backspace and fix the red characters.');
   } else if (typedText.length > 0) {
-    setStatus(mistakes ? 'Fix red characters as you go.' : 'Typing in editor mode.');
+    setStatus(mistakes ? 'Fix red characters as you go.' : 'Typing in VS Code smart-indent mode.');
   } else {
-    setStatus('Click the editor and type directly on the code.');
+    setStatus('Click the editor and start typing code.');
   }
 }
 
@@ -892,10 +1281,10 @@ function completePage() {
   renderFileTree();
 
   if (activePageIndex < getActiveLesson().pages.length - 1) {
-    setStatus('File complete. Next file is loading...');
+    setStatus('File complete! Next file is loading...');
     completionTimer = window.setTimeout(() => goToNextPage(false), 800);
   } else {
-    setStatus('Lesson complete. Reset or choose another lesson.');
+    setStatus('Lesson complete! Choose another lesson from the dropdown.');
   }
 }
 

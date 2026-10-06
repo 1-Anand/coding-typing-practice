@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docker Commands & Everyday Uses</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Containers & CLI</p>
+    <h1>Docker Commands Reference & Real-World Uses</h1>
+    <p>Master the complete set of everyday Docker commands used in production systems and DevOps workflows.</p>
+
+    <h2>1. Image & Lifecycle</h2>
+    <ul>
+      <li><code>docker build -t app:1.0 .</code> and <code>docker build --no-cache</code></li>
+      <li><code>docker run -d --name web -p 8080:80 -v data:/app app:1.0</code></li>
+      <li><code>docker stop</code>, <code>docker restart</code>, <code>docker rm -f</code>, <code>docker rmi</code></li>
+    </ul>
+
+    <h2>2. Debugging & Live Troubleshooting</h2>
+    <ul>
+      <li><code>docker logs -f --tail 100 &lt;container&gt;</code> - Stream live logs during triage</li>
+      <li><code>docker exec -it &lt;container&gt; sh</code> - Access running container shell</li>
+      <li><code>docker stats --no-stream</code> - Instant CPU/memory consumption check</li>
+      <li><code>docker inspect &lt;container&gt;</code> - Query IP addresses, mounts, and health checks</li>
+    </ul>
+
+    <h2>3. Networks, Volumes & Cleanup</h2>
+    <ul>
+      <li><code>docker network create --driver bridge app-net</code></li>
+      <li><code>docker volume create app-data</code></li>
+      <li><code>docker system df</code> &amp; <code>docker system prune -a --volumes -f</code></li>
+      <li><code>docker compose up -d</code> &amp; <code>docker compose down -v</code></li>
+    </ul>
+
+    <nav class="simple-nav" style="margin-top: 1.5rem;">
+      <a href="../typing.html">Practice in Typing IDE</a>
+      <a href="../lessons.html">Back to Lessons</a>
+    </nav>
+  </main>
+</body>
+</html>

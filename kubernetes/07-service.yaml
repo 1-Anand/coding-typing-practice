@@ -1,0 +1,68 @@
+# 1. ClusterIP Service (Internal communication - default)
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-api-clusterip
+  namespace: devops-practice
+  labels:
+    app: web-api
+spec:
+  type: ClusterIP
+  selector:
+    app: web-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+
+---
+# 2. NodePort Service (Direct port access on each node)
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-api-nodeport
+  namespace: devops-practice
+spec:
+  type: NodePort
+  selector:
+    app: web-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+      nodePort: 30080
+
+---
+# 3. LoadBalancer Service (Cloud external IP provisioned by Azure/AWS/GCP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-api-lb
+  namespace: devops-practice
+spec:
+  type: LoadBalancer
+  selector:
+    app: web-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+
+---
+# 4. Headless Service (Direct pod DNS discovery for StatefulSets)
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-api-headless
+  namespace: devops-practice
+spec:
+  clusterIP: None
+  selector:
+    app: web-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terraform Storage Account & for_each Modules</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">CT</span>
+      <span>Coding Typing Practice</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="../index.html">Home</a>
+      <a class="active" href="../lessons.html">Lessons</a>
+      <a href="../typing.html">Practice</a>
+    </nav>
+  </header>
+
+  <main class="simple-page">
+    <p class="eyebrow">Infrastructure as Code</p>
+    <h1>Terraform Storage Account (Normal & for_each Modules)</h1>
+    <p>Learn the standard single-resource pattern and the modular <code>for_each</code> pattern for provisioning Azure Storage Accounts.</p>
+
+    <h2>1. Normal Standalone Code</h2>
+    <p>Direct resource definition of <code>azurerm_storage_account</code> with security defaults (TLS 1.2, HTTPS only, soft delete, and private containers).</p>
+
+    <h2>2. Module Structure</h2>
+    <p>Encapsulate the storage account and container inside <code>modules/storage_account/</code> with <code>main.tf</code>, <code>variables.tf</code>, and <code>outputs.tf</code>.</p>
+
+    <h2>3. The for_each Pattern</h2>
+    <p>Call the module once using <code>for_each = var.storage_accounts</code> to declare multiple environments or storage tiers (logs, data, backups) cleanly without code duplication.</p>
+
+    <nav class="simple-nav" style="margin-top: 1.5rem;">
+      <a href="../typing.html">Practice in Typing IDE</a>
+      <a href="../lessons.html">Back to Lessons</a>
+    </nav>
+  </main>
+</body>
+</html>
