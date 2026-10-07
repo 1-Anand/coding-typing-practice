@@ -41,14 +41,17 @@ terraform -chdir=terraform/for_each_practice validate
 ### 2. Multi-Stage Dockerfiles (`docker/`)
 
 - **React Application (`docker/react/`):**
-  - Stage 1: `node:20-alpine` builder (`npm ci`, `npm run build`).
-  - Stage 2: `nginx:1.27-alpine` runner with custom `nginx.conf` (SPA routing, gzip, security headers).
+  - Stage 1: `node:18-alpine` builder (`npm install --legacy-peer-deps`, `npm run build`).
+  - Stage 2: `nginx:alpine` runner serving `/app/build` on port 80.
+- **Java / Spring Boot Application (`docker/java/`):**
+  - Stage 1: `maven:3.9.6-eclipse-temurin-17` builder (`mvn clean package -DskipTests`).
+  - Stage 2: `eclipse-temurin:17-jre-alpine` running `app.jar` on port 8080.
 - **.NET 8 Application (`docker/dotnet/`):**
   - Stage 1: `mcr.microsoft.com/dotnet/sdk:8.0` build & publish.
-  - Stage 2: `mcr.microsoft.com/dotnet/aspnet:8.0-alpine` minimal runtime with non-root user `app`.
+  - Stage 2: `mcr.microsoft.com/dotnet/aspnet:8.0` runtime executing `YourApp.dll` on port 80.
 - **Python Application (`docker/python/`):**
-  - Stage 1: `python:3.12-slim` builder creating isolated virtual environment in `/opt/venv`.
-  - Stage 2: `python:3.12-slim` runner copying venv without compilers, non-root user `appuser`.
+  - Stage 1: `python:3.11-slim` builder compiling `/wheels` (`pip wheel -r requirements.txt -w /wheels`).
+  - Stage 2: `python:3.11-slim` runtime installing wheels and running `python app.py` on port 5000.
 - **Docker Commands Guide (`docker/commands-cheat-sheet.md`):** Complete reference of all Docker commands (Lifecycle, Troubleshooting, Networking, Volumes, System Cleanup, Compose).
 - **Docker Practice Script (`docker/commands-practice.sh`):** Ready-to-run shell script with everyday commands.
 

@@ -242,90 +242,78 @@ module "linux_vms" {
     ]
   },
   {
-    title: 'Docker: Multi-Stage Dockerfiles (React, .NET, Python)',
+    title: 'Docker: Multi-Stage Dockerfiles (React, Java, .NET, Python)',
     type: 'Docker lesson',
     pages: [
       {
         fileName: 'react.Dockerfile',
-        text: `# Stage 1: Build React application
-FROM node:20-alpine AS builder
+        text: `# Stage 1: Build React app
+FROM node:18-alpine AS builder
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+COPY package.json package-lock.json ./
+RUN npm install --legacy-peer-deps
 
 COPY . .
 RUN npm run build
 
-# Stage 2: Production runtime with Nginx
-FROM nginx:1.27-alpine AS runner
-WORKDIR /usr/share/nginx/html
-
-RUN rm -rf ./*
-COPY --from=builder /app/dist ./
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 \\
-  CMD wget -qO- http://localhost:80/ || exit 1
-
 CMD ["nginx", "-g", "daemon off;"]`
       },
       {
+        fileName: 'java-maven.Dockerfile',
+        text: `# Stage 1: Build
+FROM maven:3.9.6-eclipse-temurin-17 AS builder
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# Stage 2: Run
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
+EXPOSE 8080
+CMD ["java", "-jar", "app.jar"]`
+      },
+      {
         fileName: 'dotnet.Dockerfile',
-        text: `# Stage 1: Build .NET application
+        text: `# Stage 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-
-COPY *.csproj ./
+COPY *.csproj .
 RUN dotnet restore
+COPY . .
+RUN dotnet publish -c Release -o /app/publish
 
-COPY . ./
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
-
-# Stage 2: Minimal ASP.NET runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
+# Stage 2: Run
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-
-USER app
-COPY --from=build --chown=app:app /app/publish ./
-
-ENV ASPNETCORE_URLS=http://+:8080
-ENV DOTNET_EnableDiagnostics=0
-EXPOSE 8080
-
-ENTRYPOINT ["dotnet", "App.dll"]`
+COPY --from=build /app/publish .
+EXPOSE 80
+ENTRYPOINT ["dotnet", "YourApp.dll"]`
       },
       {
         fileName: 'python.Dockerfile',
-        text: `# Stage 1: Build virtualenv dependencies
-FROM python:3.12-slim AS builder
+        text: `# Stage 1: Build dependencies
+FROM python:3.11-slim AS builder
 WORKDIR /app
-
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip wheel --no-cache-dir --no-deps -r requirements.txt -w /wheels
 
-# Stage 2: Secure slim runtime
-FROM python:3.12-slim AS runner
+# Stage 2: Run
+FROM python:3.11-slim
 WORKDIR /app
-
-ENV PYTHONUNBUFFERED=1 \\
-    PYTHONDONTWRITEBYTECODE=1 \\
-    PATH="/opt/venv/bin:$PATH"
-
-RUN useradd -u 1000 -m appuser
-
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /wheels /wheels
+RUN pip install --no-cache /wheels/*
 COPY . .
-
-USER appuser
-EXPOSE 8000
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]`
+EXPOSE 5000
+CMD ["python", "app.py"]`
       }
     ]
   },
